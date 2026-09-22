@@ -1,0 +1,8 @@
+# Rejected first round, superseded by v2/ — kept locally, not worth publishing
+logos/
+preview.html
+
+# Throwaway render thumbnails used to check the work
+v2/.png/
+
+.DS_Store

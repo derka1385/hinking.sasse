@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Mountaineering Club — Visual Identity</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--mc-paper);color:var(--mc-ink);padding:56px 48px 120px;
+       font:400 15px/1.6 var(--mc-font-text);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1290px;margin:0 auto}
+  .over{font-size:13px;letter-spacing:var(--mc-track-wide);text-transform:uppercase;color:var(--mc-brume)}
+  h1{font:300 var(--mc-size-3xl)/1.1 var(--mc-font-display);letter-spacing:.02em;margin:10px 0 0}
+  h2{font:400 var(--mc-size-xl)/1.2 var(--mc-font-display);letter-spacing:.03em;
+     margin:0;padding-bottom:14px;border-bottom:1px solid #E2DED6}
+  section{margin-top:var(--mc-space-6)}
+  .lead{max-width:62ch;color:#555;margin:var(--mc-space-2) 0 var(--mc-space-4)}
+  .note{max-width:62ch;font-size:14px;color:var(--mc-brume);margin-top:var(--mc-space-2)}
+  .grid{display:grid;gap:24px}
+  .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:#fff;border-radius:10px;padding:40px;display:flex;align-items:center;
+        justify-content:center;min-height:230px}
+  .card.dark{background:var(--mc-navy)} .card.ink{background:var(--mc-ink)}
+  .card img{max-width:74%;height:auto}
+  figcaption{margin-top:10px;font-size:13px;color:var(--mc-brume);display:flex;justify-content:space-between;gap:12px}
+  figure{margin:0}
+  code{font:400 13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* colour */
+  .sw{border-radius:10px;overflow:hidden;background:#fff}
+  .sw .chip{height:132px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);display:flex;align-items:flex-end;padding:14px}
+  .sw .chip span{font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+  .sw .meta{padding:14px;font-size:13px;line-height:1.5}
+  .sw .meta b{display:block;font-weight:500}
+  .sw .meta i{font-style:normal;color:var(--mc-brume)}
+  .ratio{display:inline-block;margin-top:6px;font-size:12px;padding:2px 7px;border-radius:99px;
+         background:#F0EDE6;color:#555}
+  .ratio.bad{background:#F6DED6;color:#8A2D10}
+
+  /* clear space */
+  .clear{position:relative;background:#fff;border-radius:10px;padding:56px;display:flex;
+         justify-content:center}
+  .clear .box{position:relative;padding:44px;outline:1px dashed #C9C3B7;outline-offset:-1px}
+  .clear .box img{display:block;width:340px;max-width:100%}
+  .clear .tag{position:absolute;top:8px;left:12px;font-size:11px;letter-spacing:.14em;
+              text-transform:uppercase;color:#B9B2A5}
+
+  /* minimum sizes */
+  .sizes{background:#fff;border-radius:10px;padding:36px 40px;display:flex;align-items:flex-end;
+         gap:44px;flex-wrap:wrap}
+  .sizes figcaption{display:block;margin-top:12px}
+
+  /* misuse */
+  .no{background:#fff;border-radius:10px;padding:28px;text-align:center}
+  .no .frame{height:128px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .no img{height:74px}
+  .no p{margin:14px 0 0;font-size:13px;color:#8A2D10}
+  .no p::before{content:"✕ ";font-weight:600}
+
+  /* type */
+  .type{background:#fff;border-radius:10px;padding:40px}
+  .type .row{display:flex;align-items:baseline;gap:28px;padding:14px 0;border-bottom:1px solid #F0EDE6}
+  .type .row:last-child{border:0}
+  .type .lbl{flex:0 0 130px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mc-brume)}
+  .d{font-family:var(--mc-font-display);font-weight:400}
+
+  /* applications */
+  .post{aspect-ratio:1;background:var(--mc-navy);color:var(--mc-paper);border-radius:10px;
+        padding:52px 44px;display:flex;flex-direction:column;justify-content:space-between}
+  .post img{width:118px}
+  .post .h{font:400 var(--mc-size-2xl)/1.05 var(--mc-font-display);letter-spacing:.01em;margin:0}
+  .post .meta{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:#9FB3C6}
+  .post .bar{width:54px;height:2px;background:var(--mc-ambre);margin:18px 0}
+
+  .patch{aspect-ratio:1;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .patch .disc{width:78%;aspect-ratio:1;border-radius:50%;background:var(--mc-navy);
+       border:5px solid var(--mc-ambre);display:flex;flex-direction:column;align-items:center;
+       justify-content:center;gap:14px}
+  .patch .disc img{width:44%}
+  .patch .disc span{font:400 11px/1 var(--mc-font-display);letter-spacing:.2em;color:var(--mc-paper)}
+
+  .poster{aspect-ratio:1/1.414;background:var(--mc-paper);border:1px solid #E2DED6;border-radius:10px;
+           padding:40px 34px;display:flex;flex-direction:column;justify-content:space-between}
+  .poster img{width:96px}
+  .poster .h{font:300 var(--mc-size-2xl)/1.03 var(--mc-font-display);margin:0}
+  .poster .bar{width:100%;height:1px;background:var(--mc-ink);margin:20px 0 14px}
+  .poster .meta{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6A6A66}
+
+  pre{background:#fff;border-radius:10px;padding:28px 32px;overflow:auto;margin:0}
+  @media(max-width:980px){body{padding:32px 20px 70px}.g2,.g3,.g4{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap">
+
+<p class="over">Mountaineering Club · SASSE</p>
+<h1>Visual Identity</h1>
+<p class="lead">One geometry underpins the whole system: a 2:1 slope, a constant gap, a single
+ground line. Colour, type and templates all follow from it.</p>
+
+<section>
+  <h2>The mark</h2>
+  <p class="lead">Five assets, one drawing. Pick by the space available, never by preference
+  on the day.</p>
+  <div class="grid g2">
+    <figure><div class="card"><img src="v2/logo.svg" alt="Primary logo"></div>
+      <figcaption><span>Primary logo — vertical</span><code>logo.svg</code></figcaption></figure>
+    <figure><div class="card dark"><img src="v2/logo-blanc.svg" alt="Reversed logo"></div>
+      <figcaption><span>Reversed, on dark</span><code>logo-blanc.svg</code></figcaption></figure>
+  </div>
+  <div class="grid g3" style="margin-top:24px">
+    <figure><div class="card"><img src="v2/05-lockup.svg" alt="Horizontal lockup"></div>
+      <figcaption><span>Horizontal — headers</span><code>05-lockup.svg</code></figcaption></figure>
+    <figure><div class="card"><img src="v2/marque.svg" style="max-width:48%" alt="Mark only"></div>
+      <figcaption><span>Mark only — avatar</span><code>marque.svg</code></figcaption></figure>
+    <figure><div class="card dark"><img src="v2/marque-ambre.svg" style="max-width:48%" alt="Accent mark"></div>
+      <figcaption><span>Accent mark</span><code>marque-ambre.svg</code></figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>Clear space</h2>
+  <p class="lead">Nothing enters the margin — not a rule, not a page edge. The margin is
+  <b>13 % of the width of whatever you place</b>: 44 px for a 340 px logo. The number is not
+  arbitrary, it is the ratio between the width of the cleft and the width of the mark. So the
+  margin scales with the logo and never needs recalculating.</p>
+  <div class="clear"><div class="box"><span class="tag">13 % of the width</span>
+    <img src="v2/logo.svg" alt="Clear space"></div></div>
+</section>
+
+<section>
+  <h2>Minimum sizes</h2>
+  <p class="lead">Measured by rendering the logo at real size, not estimated. Below these
+  thresholds the word closes up or the cleft fills in.</p>
+  <div class="sizes">
+    <figure><img src="v2/logo.svg" style="height:44px" alt="">
+      <figcaption><b>44 px</b> tall — vertical logo</figcaption></figure>
+    <figure><img src="v2/05-lockup.svg" style="height:30px" alt="">
+      <figcaption><b>30 px</b> tall — horizontal lockup</figcaption></figure>
+    <figure><img src="v2/marque.svg" style="height:16px" alt="">
+      <figcaption><b>16 px</b> tall — mark only</figcaption></figure>
+  </div>
+  <p class="note">For embroidery, allow 45 mm wide minimum for the mark on its own: the cleft is
+  13 % of the width, and below that the needle fills it in.</p>
+</section>
+
+<section>
+  <h2>Misuse</h2>
+  <div class="grid g4">
+    <div class="no"><div class="frame"><img src="v2/marque.svg" style="transform:scaleX(1.5)"></div>
+      <p>Do not distort. The 2:1 slope is the subject.</p></div>
+    <div class="no"><div class="frame"><img src="v2/marque.svg" style="transform:rotate(-14deg)"></div>
+      <p>Do not tilt. The ground line is horizontal.</p></div>
+    <div class="no"><div class="frame" style="background:#D98E3C"><img src="v2/marque.svg"></div>
+      <p>Do not put ink on amber. 2.38:1.</p></div>
+    <div class="no"><div class="frame"><img src="v2/marque.svg" style="filter:drop-shadow(4px 6px 5px rgba(0,0,0,.45))"></div>
+      <p>No shadows or gradients. The mark is flat.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Colour</h2>
+  <p class="lead">Four colours carry everything. Ink and paper are the constants, inherited from
+  SASSE. Navy is the club's dark base. <b>Amber is the only accent, and it lives on dark
+  backgrounds only.</b></p>
+  <div class="grid g4" id="sw"></div>
+  <p class="note">Ratios are calculated (WCAG 2.1), not approximated. Amber on paper falls to
+  2.38:1, so it is banned for text on light backgrounds. As a graphic fill on paper it is still
+  usable, but never to carry information anyone has to read.</p>
+</section>
+
+<section>
+  <h2>The device</h2>
+  <p class="lead">Colour does not dress the mark, it enters at exactly one place: <b>the cleft</b>.
+  That is what makes the system recognisable without multiplying colours, and what keeps the
+  silhouette readable at every size.</p>
+  <div class="grid g3">
+    <figure><div class="card ink"><img src="v2/carre-05-ambre.svg" style="max-width:100%;border-radius:6px"></div>
+      <figcaption><span>Amber — default</span><code>#D98E3C</code></figcaption></figure>
+    <figure><div class="card ink"><img src="v2/carre-04-pin.svg" style="max-width:100%;border-radius:6px"></div>
+      <figcaption><span>Pine — held in reserve</span><code>#74B096</code></figcaption></figure>
+    <figure><div class="card ink"><img src="v2/carre-03-glacier.svg" style="max-width:100%;border-radius:6px"></div>
+      <figcaption><span>Glacier — winter</span><code>#86C4E3</code></figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>Typography</h2>
+  <p class="lead">A geometric sans for headings and the name, a neutral one for body text.
+  Futura is the print face — it draws the wordmark. Jost is its free substitute on the web,
+  within 2 % on set width.</p>
+  <div class="type">
+    <div class="row"><span class="lbl">Display 55</span><span class="d" style="font-size:55px">Ridge at dawn</span></div>
+    <div class="row"><span class="lbl">Display 31</span><span class="d" style="font-size:31px">Season programme</span></div>
+    <div class="row"><span class="lbl">Club name</span><span class="d" style="font-size:17px;letter-spacing:.18em;text-transform:uppercase">Mountaineering Club</span></div>
+    <div class="row"><span class="lbl">Eyebrow</span><span style="font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--mc-brume)">Saturday 14 March · 06:00</span></div>
+    <div class="row"><span class="lbl">Body 17</span><span style="font-size:17px">Group departure, gear provided for beginners.</span></div>
+  </div>
+  <p class="note">Scale, ratio 1.333: 12 · 14 · 17 · 23 · 31 · 41 · 55. Take a value from the
+  scale; do not invent one in between.</p>
+</section>
+
+<section>
+  <h2>Applications</h2>
+  <div class="grid g3">
+    <figure><div class="post">
+        <img src="v2/marque-ambre.svg" alt="">
+        <div><p class="h">Ridge<br>at dawn</p><div class="bar"></div>
+          <p class="meta">Sat 14 March · 06:00<br>Meet at Sveavägen 65</p></div>
+      </div><figcaption><span>Instagram post 1080²</span></figcaption></figure>
+
+    <figure><div class="patch"><div class="disc">
+        <img src="v2/marque-blanc.svg" alt=""><span>MOUNTAINEERING</span></div>
+      </div><figcaption><span>Embroidered patch / sticker · ⌀ 75 mm</span></figcaption></figure>
+
+    <figure><div class="poster">
+        <img src="v2/marque.svg" alt="">
+        <div><p class="h">Season<br>2026</p><div class="bar"></div>
+          <p class="meta">Intro meeting · Thursday 18:00<br>Open to beginners</p></div>
+      </div><figcaption><span>A3 poster · recruitment</span></figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>Tokens</h2>
+  <p class="lead">One source, <code>tokens.css</code>. The site, the slides and every template
+  read from it; no value gets copied anywhere else.</p>
+  <pre id="tok">loading…</pre>
+</section>
+
+</div>
+<script>
+const SW=[["Ink","#1D1D1B","#F4F2EE","SASSE constant. Text, mark, rules.",15.10,"on paper"],
+["Paper","#F4F2EE","#1D1D1B","Default background. Never pure white.",15.52,"on navy"],
+["Navy night","#0B1B2E","#F4F2EE","Club dark base. Backgrounds, tiles, posts.",15.52,"paper on top"],
+["Amber","#D98E3C","#0B1B2E","Sole accent. Dark backgrounds only.",6.51,"on navy"]];
+document.getElementById('sw').innerHTML=SW.map(([n,hex,fg,use,r,ctx])=>`
+<div class="sw"><div class="chip" style="background:${hex};color:${fg}"><span>${n}</span></div>
+<div class="meta"><b>${hex}</b><i>${use}</i>
+<span class="ratio">${r.toFixed(2)}:1 ${ctx}</span></div></div>`).join('')
++`<div class="sw"><div class="chip" style="background:#D98E3C;color:#F4F2EE"><span>Amber on paper</span></div>
+<div class="meta"><b>#D98E3C</b><i>Banned for text on light backgrounds.</i>
+<span class="ratio bad">2.38:1 — fails</span></div></div>`;
+fetch('tokens.css').then(r=>r.text()).then(t=>document.getElementById('tok').textContent=t)
+  .catch(()=>document.getElementById('tok').textContent='Open tokens.css directly — the browser blocks fetch over file://');
+</script></body></html>

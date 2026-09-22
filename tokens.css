@@ -1,0 +1,55 @@
+/* Mountaineering Club — brand tokens.
+   Single source for the site, the slides and every template. Values live here and
+   are not copied anywhere else. */
+
+:root {
+  /* --- Ink and paper: the two constants, never swapped for a tint --- */
+  --mc-ink:      #1D1D1B;   /* warm black, like the SASSE logo — never pure black */
+  --mc-paper:    #F4F2EE;
+
+  /* --- Club dark base --- */
+  --mc-navy:     #0B1B2E;
+
+  /* --- Accent. Dark backgrounds only: on paper it drops to 2.38:1 and fails --- */
+  --mc-ambre:    #D98E3C;
+
+  /* --- Secondary text --- */
+  --mc-brume:    #8A8A85;
+
+  /* --- Cold reserve, winter comms --- */
+  --mc-glacier:  #86C4E3;
+
+  /* --- Type ---
+     Display: Futura in print (macOS), Jost on the web — a very close free substitute.
+     Body:    Inter. */
+  --mc-font-display: "Jost", "Futura", "Avenir Next", sans-serif;
+  --mc-font-text:    "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  --mc-track-wide: 0.22em;   /* eyebrows, labels */
+  --mc-track-name: 0.18em;   /* club name */
+
+  /* Type scale, ratio 1.333 */
+  --mc-size-xs:  12px;
+  --mc-size-s:   14px;
+  --mc-size-m:   17px;
+  --mc-size-l:   23px;
+  --mc-size-xl:  31px;
+  --mc-size-2xl: 41px;
+  --mc-size-3xl: 55px;
+
+  /* Spacing, base 8 */
+  --mc-space-1:  8px;
+  --mc-space-2: 16px;
+  --mc-space-3: 24px;
+  --mc-space-4: 40px;
+  --mc-space-5: 64px;
+  --mc-space-6:104px;
+
+  /* Clear space = width of the cleft = 13 % of the width of the mark */
+  --mc-clearspace: 0.13;
+
+  /* Minimum sizes, measured rather than estimated (see brand.html) */
+  --mc-min-mark:       16px;  /* height */
+  --mc-min-lockup-h:   30px;
+  --mc-min-logo-v:     44px;
+}

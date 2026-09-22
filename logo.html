@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Mountaineering Club — Official Logo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{--paper:#F4F2EE;--card:#FFF;--ink:#1D1D1B;--mute:#8A8A85;--line:#E8E5DF}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);padding:52px 48px 96px;
+       font:400 15px/1.55 -apple-system,"Helvetica Neue",Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  header{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin:0 0 34px}
+  h3{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);
+     margin:54px 0 18px;font-weight:500}
+  .wrap{max-width:1290px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .card{background:var(--card);border-radius:10px;padding:48px;display:flex;align-items:center;justify-content:center;min-height:360px}
+  .card.dark{background:#1D1D1B}
+  .card img{max-width:78%;height:auto}
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .tile figure{margin:0}
+  .tile img{width:100%;display:block;border-radius:10px}
+  .tile figcaption{margin-top:12px;font-size:13px;color:var(--mute);display:flex;justify-content:space-between}
+  .tile code{font:inherit;color:var(--ink)}
+  .sizes{background:var(--card);border-radius:10px;padding:34px 40px;display:flex;align-items:flex-end;gap:38px}
+  .sizes img{height:auto}
+  @media(max-width:900px){body{padding:32px 20px}.two,.tiles{grid-template-columns:1fr}}
+</style></head><body>
+<header>Mountaineering Club / Official logo — SASSE structure</header>
+<div class="wrap">
+  <h3>Primary logo &nbsp;·&nbsp; reversed</h3>
+  <div class="two">
+    <div class="card"><img src="v2/logo.svg" alt="Primary logo"></div>
+    <div class="card dark"><img src="v2/logo-blanc.svg" alt="Reversed logo"></div>
+  </div>
+
+  <h3>Scaling test</h3>
+  <div class="sizes">
+    <img src="v2/logo.svg" style="height:120px"><img src="v2/logo.svg" style="height:64px">
+    <img src="v2/logo.svg" style="height:40px"><img src="v2/logo.svg" style="height:26px">
+  </div>
+
+  <h3>Dark squares &nbsp;·&nbsp; avatar, app icon, post</h3>
+  <div class="tiles" id="t"></div>
+</div>
+<script>
+const tiles=[["carre-01-encre.svg","Ink","#131312"],["carre-02-navy.svg","Navy night","#0B1B2E"],
+["carre-03-glacier.svg","Glacier","#86C4E3"],["carre-04-pin.svg","Pine","#74B096"],
+["carre-05-ambre.svg","Amber","#D98E3C"],["carre-06-ardoise.svg","Slate","#5F90A9"]];
+document.getElementById('t').innerHTML=tiles.map(([f,n,c])=>`<div class="tile"><figure>
+<img src="v2/${f}" alt="${n}"><figcaption><span>${n}</span><code>${c}</code></figcaption></figure></div>`).join('');
+</script></body></html>
