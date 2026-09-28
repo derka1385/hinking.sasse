@@ -15,6 +15,9 @@ site/assets/js/intro.js      the ascent (home only): WebGL2 raymarcher, plays on
 site/assets/js/relief.js     the terrain object: a cut block of real terrain, contours, route drawn on scroll
 site/assets/js/contours.js   live contour layers: marching squares over the heightmaps, flowing with scroll
 site/assets/js/rock.js       the granite fragment in Activities → Climbing
+site/assets/js/film.js       the film (home, last section): the loop as poster, the film on request
+site/assets/film/            the brand film, its 30 s cuts (16:9 and 9:16), the website loop, posters
+site/tools/film/             the film's source: the edit, the drawn scenes, the synthesised sound (README inside)
 ```
 
 Rebuild after changing data: `python3 site/tools/build_assets.py routes && python3 site/tools/build_pages.py`.
@@ -29,6 +32,8 @@ Serve the root to try it: `python3 -m http.server` (heightmaps are read from can
 | Expedition 005 Sarek is an announced example | same |
 | The board: roles are listed, names are "To be announced" | `build_pages.py`, `club()` |
 | FAQ answers about fees and allocation | `build_pages.py`, `FAQ` |
+| The film's voice-over: written, not recorded; the words are set as type for now | `tools/film/README.md`, *The voice-over* |
+| The film's Stockholm shots (the school, the street, the lecture hall) are drawn stand-ins for footage | `tools/film/README.md`, shot list |
 
 Real: coordinates, summit heights, stations and huts, the terrain, the routes' shape and length
 (computed from the elevation model), the distance from Sveavägen, the night train.
@@ -37,7 +42,7 @@ Real: coordinates, summit heights, stations and huts, the terrain, the routes' s
 
 | Route | Purpose |
 |---|---|
-| `/` | The ascent, a title card, then an overview: statement, next expedition, 1,002 km north, activities, archive, the club, join |
+| `/` | The ascent, a title card, then an overview: statement, next expedition, 1,002 km north, activities, archive, the club, join, the film |
 | `/expeditions/` | Upcoming dossiers (status, dates, difficulty, distance, places), then the completed ones |
 | `/expeditions/<no>-<name>/` | One dossier per expedition: facts, route map + elevation profile + stages, terrain model, photographs, field log, packing list, registration |
 | `/archive/` | The record by year, as a list or on the map of Scandinavia |
@@ -83,6 +88,9 @@ Everything is drawn from the club's world, and nothing moves without a reason.
 4. The archive map: photographs grow out of the points.
 5. Activities: the terrain drifts (Hiking), granite crosses the headline (Climbing), the white takes the
    page (Alpine), the page goes cold (Winter), every route draws at once (Expeditions).
+6. The film, last on the home page: *From Stockholm, outward.* A silent twelve-second loop (fog, the
+   mountain, a tiny group, snow) holds the frame; *Play the film* gives it the full 1:30 with sound.
+   It ends on white, on the paper of the page.
 
 ## System
 
@@ -96,7 +104,9 @@ One rAF loop for the whole site, asleep unless something moves; every canvas sto
 relief and the rock render only when their input changed; the intro adapts its resolution and quality
 and is disposed once it has played. Photographs are WebP at two sizes, lazy, with dimensions. Scrolling
 measures 60 fps on an M4 on every page. `prefers-reduced-motion`: no intro (the title card), no parallax,
-routes shown complete, no page-transition animation.
+routes shown complete, no page-transition animation, and the film's loop stays a still poster.
+The film loads nothing until its section is near (`preload="none"`), plays only on screen, and
+skips the loop under Save-Data.
 
 ## Credits
 

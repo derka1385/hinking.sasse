@@ -14,3 +14,6 @@ site/tools/raw/
 .impeccable/hook.cache.json
 
 __pycache__/
+
+# Film: TTF copies of the site fonts, made on demand by site/tools/film/kit.py
+site/tools/film/.fonts/

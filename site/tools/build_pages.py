@@ -301,7 +301,7 @@ def home():
     rows = "".join(log_row(d, BY[n]) for n in ("002", "003", "001"))
     return (head(d, "Hiking Club — SASSE, Stockholm School of Economics",
                  "Hiking Club is the outdoor club of SASSE, the Student Association at the Stockholm School of Economics. Day trails, rock, ice and the long way north.",
-                 "home", ("contours", "relief", "intro"))
+                 "home", ("contours", "relief", "intro", "film"))
             + header(d, "") + intro() + f"""
 <main id="main">
 
@@ -382,8 +382,57 @@ def home():
 </section>
 
 {join_band(d)}
+
+{film(d)}
 </main>
 """ + footer(d))
+
+
+FILM_WORDS = [
+    "Most days begin the same way.", "The same streets.", "The same doors.",
+    "The same distance between where you are… and somewhere else.",
+    "Some places don’t ask who you are.", "Only whether you keep moving.", "Further.", "Higher.", "Together.",
+    "You will forget the cold.", "You will forget the distance.", "You will probably forget how much your legs hurt.",
+    "But you won’t forget who was there.", "Stockholm is where we meet.", "Not where we stop.",
+    "From Stockholm, outward.", "Join the next expedition.",
+]
+
+
+def film(d):
+    """The brand film, last on the home page: a silent loop is the poster, the button plays the film."""
+    f = u(d, "site/assets/film/")
+    nxt = BY["004"]
+    words = "".join(f"<p>{esc(w)}</p>" for w in FILM_WORDS)
+    return f"""<section class="section film" data-theme="paper" aria-labelledby="film-title">
+  {rowhead("07", "The film", "1 min 30 · Sound on")}
+  <h2 id="film-title" class="h-lg film-h" data-lines>You spend enough time indoors.<br><em>Come outside.</em></h2>
+  <figure class="film-stage" data-film data-reveal>
+    <div class="film-frame">
+      <video class="film-loop" muted loop playsinline preload="none" poster="{f}poster.webp" aria-hidden="true" tabindex="-1">
+        <source src="{f}hiking-club-loop.webm" type="video/webm">
+        <source src="{f}hiking-club-loop.mp4" type="video/mp4">
+      </video>
+      <video class="film-full" id="film-full" controls playsinline preload="none" poster="{f}poster-film.webp"
+             aria-label="From Stockholm, outward. The Hiking Club film, 1 minute 30 seconds, with sound.">
+        <source src="{f}hiking-club-film.mp4" type="video/mp4">
+      </video>
+      <button class="film-play" type="button" aria-controls="film-full">
+        <span class="film-play-ring" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5z"/></svg></span>
+        <span class="film-play-t label">Play the film</span>
+        <span class="film-play-d label tnum">1:30 · Sound on</span>
+      </button>
+      <p class="film-tag label tnum" aria-hidden="true"><span>Exp. {nxt["no"]} — {nxt["name"]}</span><span>{coords(nxt)}</span></p>
+    </div>
+    <figcaption><b>Fig. 05</b> From Stockholm, outward. Made from the club’s photographs and the terrain of Abisko; every sound in it was synthesised.</figcaption>
+  </figure>
+  <div class="film-foot">
+    <details class="film-words"><summary class="label">The words</summary><div class="film-words-in">{words}</div></details>
+    <div class="film-cta" data-reveal>
+      <a class="btn btn-ink" href="{u(d, "join/")}">Join the next expedition<span class="btn-arrow" aria-hidden="true">→</span></a>
+      <a class="link" href="{f}hiking-club-film-30s.mp4" download>The 30-second cut</a>
+    </div>
+  </div>
+</section>"""
 
 
 def join_band(d):

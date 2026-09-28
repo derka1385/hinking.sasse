@@ -333,6 +333,7 @@ details[open]::details-content { height: auto; }
   html.js [data-lines] .line > span { display: inline-block; transform: translateY(108%); transition: transform 1.5s var(--ease); transition-delay: calc(var(--i, 0) * 110ms); }
   html.js [data-lines].is-in .line > span { transform: none; }
 }
+html.js [data-lines] .line { display: block; }   /* split lines keep their breaks, with or without motion */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
@@ -491,6 +492,60 @@ details[open]::details-content { height: auto; }
 
 /* join band */
 .join-band-cta { display: flex; align-items: center; gap: 36px; flex-wrap: wrap; margin-top: clamp(48px, 6vw, 88px); }
+
+/* ------------------------------------------------------------------ 07 film
+   The last thing on the home page. A silent loop is the poster; the button plays the film with
+   sound in the same frame. The frame bleeds to the edges and never grows taller than the screen. */
+.film-h { margin: clamp(56px, 8vw, 128px) 0 clamp(48px, 6vw, 96px) -.04em; }
+.film-stage { margin: 0 calc(var(--m) * -1); }
+.film-frame {
+  position: relative; overflow: hidden; width: 100%; aspect-ratio: 16 / 9; max-height: 100vh; max-height: 100svh;
+  margin: 0 auto; background: #0d0f12; color: var(--paper);
+}
+.film-frame video { position: absolute; inset: 0; width: 100%; height: 100%; }
+.film-loop { object-fit: cover; }
+.film-full { object-fit: contain; background: #000; }
+.film-frame::after {  /* a breath of shade so the button and the labels read on fog and snow */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(60% 55% at 50% 50%, rgba(8, 12, 18, .28), transparent 70%), linear-gradient(transparent 70%, rgba(8, 12, 18, .35));
+  transition: opacity .8s var(--ease);
+}
+.film-play {
+  position: absolute; left: 50%; top: 50%; z-index: 2; transform: translate(-50%, -50%);
+  display: grid; justify-items: center; gap: 14px; padding: 20px; border: 0; background: none; cursor: pointer; color: var(--paper);
+}
+.film-play-ring {
+  display: grid; place-items: center; width: clamp(64px, 6.4vw, 96px); aspect-ratio: 1; border: 1px solid rgba(244, 242, 238, .85); border-radius: 50%;
+  transition: transform .9s var(--ease), background-color .6s var(--ease), border-color .6s var(--ease);
+}
+.film-play-ring svg { width: 30%; fill: currentColor; transform: translateX(6%); }
+.film-play-d { color: rgba(244, 242, 238, .72); }
+.film-play:hover .film-play-ring, .film-play:focus-visible .film-play-ring { transform: scale(1.06); background: rgba(244, 242, 238, .12); border-color: var(--paper); }
+.film-play:focus-visible { outline: none; }
+.film-play:focus-visible .film-play-t { text-decoration: underline; text-underline-offset: 4px; }
+.film-tag {
+  position: absolute; left: var(--m); right: var(--m); bottom: clamp(18px, 3vw, 40px); z-index: 1;
+  display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; color: rgba(244, 242, 238, .82); pointer-events: none;
+  transition: opacity .6s var(--ease);
+}
+.film-stage figcaption { margin: 14px var(--m) 0; }
+/* with script: the loop leads; the film takes the frame when asked for */
+html.js .film-full { opacity: 0; visibility: hidden; transition: opacity .8s var(--ease), visibility 0s .8s; }
+html.js .film-stage[data-state="film"] .film-full { opacity: 1; visibility: visible; transition: opacity .8s var(--ease); }
+html.js .film-stage[data-state="film"] .film-play,
+html.js .film-stage[data-state="film"] .film-tag,
+html.js .film-stage[data-state="film"] .film-frame::after { opacity: 0; visibility: hidden; }
+/* without script: the film, with its own controls */
+html:not(.js) .film-loop, html:not(.js) .film-play, html:not(.js) .film-tag, html:not(.js) .film-frame::after { display: none; }
+
+.film-foot { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gut); row-gap: 40px; margin-top: clamp(56px, 7vw, 112px); }
+.film-words { grid-column: 1 / 7; align-self: start; padding-top: 18px; border-top: 1px solid var(--rule); }
+.film-words summary { cursor: pointer; list-style: none; color: var(--mute); }
+.film-words summary::-webkit-details-marker { display: none; }
+.film-words summary::after { content: " +"; }
+.film-words[open] summary::after { content: " −"; }
+.film-words-in { display: grid; gap: 4px; margin-top: 20px; max-width: 34ch; font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 1.2vw + 12px, 24px); line-height: 1.4; }
+.film-cta { grid-column: 8 / 13; display: flex; align-items: center; justify-content: flex-end; gap: 32px; flex-wrap: wrap; align-self: start; }
 
 /* ------------------------------------------------------------------ page heads */
 .page-head { position: relative; min-height: 88vh; min-height: 88svh; display: grid; align-content: end; padding: 140px var(--m) clamp(56px, 7vw, 104px); overflow: hidden; background: var(--paper); border-bottom: 1px solid var(--rule); }
@@ -731,6 +786,14 @@ details[open]::details-content { height: auto; }
 ::view-transition-group(*) { animation-timing-function: cubic-bezier(.65, 0, .2, 1); animation-duration: .72s; }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+@media (max-width: 860px) {
+  .film-words, .film-cta { grid-column: 1 / -1; }
+  .film-cta { justify-content: flex-start; }
+  .film-tag > :last-child { display: none; }
+  .film-play { gap: 10px; }
+  .film-play-d { display: none; }
 }
 
 /* ------------------------------------------------------------------ V2 on small screens */
