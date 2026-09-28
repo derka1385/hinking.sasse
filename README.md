@@ -5,7 +5,7 @@ Formerly working-titled Mountaineering Club. Everything here derives from one ge
 by script rather than drawn by hand, so every variant shares exactly the same angles and the same
 spacing.
 
-The website lives in [`site/`](site/) (see [site/README.md](site/README.md)).
+The website is [`index.html`](index.html) at the root, with its assets in [`site/`](site/) (see [site/README.md](site/README.md)).
 
 | | |
 |---|---|

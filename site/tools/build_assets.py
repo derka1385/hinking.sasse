@@ -7,7 +7,7 @@ photos  tools/raw/*.jpg  -> assets/img/<name>-{960,1920}.webp, one shared docume
 maps    Terrarium DEM tiles (public, AWS open data) -> assets/map/<name>.svg, real contour lines
 logo    the mark geometry of v2/gen.py + Futura Medium outlines -> assets/img/logo-*.svg
 grain   assets/img/grain.png, tileable film grain for the intro
-inject  writes the logo sprite and the photo credits into index.html, between their markers
+inject  writes the logo sprite and the photo credits into ../index.html, between their markers
 
 The raw photos are not committed (see .gitignore); tools/credits.json lists where each comes from.
 """
@@ -237,7 +237,7 @@ def inject():
         items.append(f'<li><a href="{html.escape(c["page"])}" rel="noopener">{html.escape(title)}</a>, '
                      f'{html.escape(c["artist"] or "unknown")}, <a href="{lic[c["lic"]]}" rel="noopener">{c["lic"]}</a>. Graded and cropped.</li>')
     credits = '<ul class="credits-list">' + "".join(items) + "</ul>"
-    page = SITE / "index.html"
+    page = SITE.parent / "index.html"          # the page sits at the repo root, for GitHub Pages
     t = page.read_text()
     t = re.sub(r"<!-- sprite -->.*?<!-- /sprite -->", lambda m: f"<!-- sprite -->{sprite}<!-- /sprite -->", t, flags=re.S)
     t = re.sub(r"<!-- credits -->.*?<!-- /credits -->", lambda m: f"<!-- credits -->{credits}<!-- /credits -->", t, flags=re.S)

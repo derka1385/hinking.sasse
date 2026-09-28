@@ -22,9 +22,12 @@ const seen = new IntersectionObserver((entries) => {
 }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
 document.querySelectorAll('[data-reveal], [data-lines]').forEach((el) => seen.observe(el));
 
-// the intro normally says when it is over; this covers a failed or skipped intro script
-new IntersectionObserver(([e]) => { if (e.boundingClientRect.top < innerHeight) root.classList.add('intro-done'); })
-  .observe(document.getElementById('manifesto'));
+// the navigation arrives with the page: decided by the scrollbar, so a jump (Skip intro, a #hash) can't strand it
+const intro = document.getElementById('intro');
+const syncNav = () => root.classList.toggle('intro-done', scrollY >= intro.offsetTop + intro.offsetHeight - innerHeight * 1.03);
+addEventListener('scroll', syncNav, { passive: true });
+addEventListener('resize', syncNav);
+syncNav();
 
 // navigation: takes the theme of the section under it, marks the current section
 const nav = document.querySelector('[data-nav]');

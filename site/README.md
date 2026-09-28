@@ -1,10 +1,11 @@
 # Hiking Club — website
 
-One static page, no build step, no dependencies. Open `index.html`, or serve the folder
-(`python3 -m http.server` inside `site/`) to get the font preloads as well.
+One static page, no build step, no dependencies. The page itself is `index.html` at the repo root,
+so GitHub Pages serves it at the site's address; everything it loads lives here in `site/`. Open it,
+or serve the repo root (`python3 -m http.server`) to get the font preloads as well.
 
 ```
-index.html              all content, in reading order
+../index.html           all content, in reading order
 assets/css/site.css     the design system below
 assets/js/intro.js      the ascent: WebGL2 raymarcher + snow, scroll-driven camera, wind
 assets/js/site.js       reveals, navigation theme, disciplines, join form
@@ -16,10 +17,10 @@ tools/build_assets.py   photos (grade + WebP), contour maps (open DEM), logo (Fu
 
 | What | Where |
 |---|---|
-| Club inbox. The form composes an email to it. Swap it for a form endpoint if the board has one | `index.html`, `data-mailto` on `.join-form` |
-| Expedition 004: dates, places left, closing date, distance | `index.html`, section 02 |
-| Archive 001–003: dates, group sizes, distances and notes are illustrative | `index.html`, section 03 |
-| Facts row under the manifesto (004 / 68.35° N / 2,097 m / 1,002 km) follows the archive | `index.html`, section 01 |
+| Club inbox. The form composes an email to it. Swap it for a form endpoint if the board has one | `../index.html`, `data-mailto` on `.join-form` |
+| Expedition 004: dates, places left, closing date, distance | `../index.html`, section 02 |
+| Archive 001–003: dates, group sizes, distances and notes are illustrative | `../index.html`, section 03 |
+| Facts row under the manifesto (004 / 68.35° N / 2,097 m / 1,002 km) follows the archive | `../index.html`, section 01 |
 
 Coordinates, summit heights and the Stockholm–Abisko distance are real.
 

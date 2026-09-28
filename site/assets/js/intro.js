@@ -734,7 +734,6 @@ function frame(now) {
   overlay(reduced ? 0 : p, cam, vp, stage.clientWidth, stage.clientHeight);
   stage.classList.toggle('is-light', p > 0.84 && !reduced);
   updateAudio(p, time);
-  root.classList.toggle('intro-done', reduced || p > 0.975);
 
   // adaptive resolution. Under vsync a fast frame and a barely-fast one look the same, so the
   // only signal is dropped frames: back off quickly, and probe upwards again after a quiet spell.
