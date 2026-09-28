@@ -88,7 +88,7 @@ Everything is drawn from the club's world, and nothing moves without a reason.
 4. The archive map: photographs grow out of the points.
 5. Activities: the terrain drifts (Hiking), granite crosses the headline (Climbing), the white takes the
    page (Alpine), the page goes cold (Winter), every route draws at once (Expeditions).
-6. The film, last on the home page: *From Stockholm, outward.* A silent twelve-second loop (fog, the
+6. The film, last on the home page: *From Stockholm, outward.* A silent thirteen-second loop (fog, the
    mountain, a tiny group, snow) holds the frame; *Play the film* gives it the full 1:30 with sound.
    It ends on white, on the paper of the page.
 

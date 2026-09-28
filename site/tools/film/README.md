@@ -11,7 +11,7 @@ of it: wind, snow under boots, breath, a carabiner gate, lake ice, a night train
 | `hiking-club-film.mp4` | 1:30, 16:9, sound | The film: home page, events, recruitment |
 | `hiking-club-film-30s.mp4` | 0:30, 16:9, sound | Social, club promotion, before a talk |
 | `hiking-club-film-30s-vertical.mp4` | 0:30, 9:16, sound | Stories, Reels, TikTok |
-| `hiking-club-loop.mp4`, `.webm` | 0:12, silent, seamless | Website background: fog, the mountain, a tiny group, snow |
+| `hiking-club-loop.mp4`, `.webm` | 0:13, silent, seamless | Website background: fog, the mountain, a tiny group, snow |
 | `poster.webp`, `poster-film.webp` | stills | The loop's first frame; the film's last people standing |
 
 ## Rebuild

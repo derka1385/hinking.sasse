@@ -5,7 +5,7 @@
 
 full  the film, about 90 s, 16:9, with sound            -> assets/film/hiking-club-film.mp4
 cut   the 30 s version for social and promotion         -> assets/film/hiking-club-film-30s.mp4
-loop  12 s, silent, seamless, for the website           -> assets/film/hiking-club-loop.mp4 (+ .webm)
+loop  13 s, silent, seamless, for the website           -> assets/film/hiking-club-loop.mp4 (+ .webm)
 
 --sheet renders one frame per shot into a contact sheet instead of the film. Sound comes from
 sound.py, which reads the same timelines, so picture and sound cannot drift apart.
@@ -500,7 +500,7 @@ def cut():
 
 
 def loop():
-    """12 s, silent, seamless: fog, the mountain, a tiny group, snow, and back into the fog."""
+    """13 s, silent, seamless: fog, the mountain, a tiny group, snow, and back into the fog."""
     c = [
         Clip(S["fog_open"], 4.4, "fog", offset=1.5),
         Clip(S["wide_group"], 4.4, "wide", xin=1.2, offset=0.5),
@@ -775,11 +775,12 @@ if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     import sound
     if a.which == "loop":
-        encode(rotated(wd), tl, OUT / "hiking-club-loop.mp4", crf=27, webm=True, denoise="hqdn3d=6:4:14:14")
+        encode(rotated(wd), tl, OUT / "hiking-club-loop.mp4", crf=29, webm=True, denoise="hqdn3d=6:4:14:14")
     else:
         wav = Path(wd) / "mix.wav"
         sound.mix(tl, wav)
         vert = "-vertical" if H > W else ""
-        # the film is for the site (lighter); the cuts go to social platforms, which re-encode (richer)
+        # sized for a website: about 2.5 Mb/s for the film; the cuts a little leaner still, since every
+        # social platform re-encodes what it is given
         encode(wd, tl, OUT / ("hiking-club-film" + ("" if a.which == "full" else "-30s") + vert + ".mp4"),
-               audio=wav, crf=25 if a.which == "full" else 23)
+               audio=wav, crf=27, denoise=DENOISE if a.which == "full" else "hqdn3d=6:4:14:14")
