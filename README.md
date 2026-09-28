@@ -9,7 +9,6 @@ The website is [`index.html`](index.html) at the root, with its assets in [`site
 
 | | |
 |---|---|
-| **[brand.html](brand.html)** | The identity guide: mark, clear space, minimum sizes, misuse, colour, type, applications |
 | **[logo.html](logo.html)** | The official logo and the dark square variants |
 | **[symbol-study.html](symbol-study.html)** | The symbol study that led to the chosen mark |
 | **[tokens.css](tokens.css)** | The single source for colour, type and spacing values |
