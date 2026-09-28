@@ -1,0 +1,461 @@
+{
+  "_note": "Source of truth for every page. Coordinates, heights and places are real; dates, group sizes, places left, costs and itineraries are illustrative until the board confirms them. Rebuild with: python3 site/tools/build_assets.py routes && python3 site/tools/build_pages.py",
+  "expeditions": [
+    {
+      "no": "001",
+      "slug": "001-tyresta",
+      "name": "Tyresta",
+      "region": "Tyresta National Park, Haninge",
+      "lat": 59.1833,
+      "lon": 18.3,
+      "status": "completed",
+      "year": 2026,
+      "dates": "14 March 2026",
+      "short": "Mar 2026",
+      "days": 1,
+      "category": "Forest · Day hike",
+      "discipline": "hiking",
+      "difficulty": 1,
+      "difficultyLabel": "Easy",
+      "distance_km": 16,
+      "ascent_m": 240,
+      "high_m": 83,
+      "highName": "Tyresta ridge",
+      "group": 24,
+      "terrain": "Old-growth pine, bare granite, the fire field of 1999, bog boardwalks",
+      "transport": "Bus 834 from Gullmarsplan, one hour",
+      "climate": "Early March: −4 to +3 °C, frozen lakes, 11 hours of daylight",
+      "note": "Old-growth pine, bare granite and a forest regrowing since the fire of 1999. One hour from the city by bus, and a good first trip.",
+      "log": [
+        [
+          "07:40",
+          "Gullmarsplan. Twenty-four at the bus stop, three with new boots."
+        ],
+        [
+          "09:05",
+          "Tyresta village. Map, water, first layers off."
+        ],
+        [
+          "12:30",
+          "Lunch on the granite above Årsjön, still frozen at the edges."
+        ],
+        [
+          "15:50",
+          "Back at the village. 16 km, nobody lost."
+        ]
+      ],
+      "images": {
+        "hero": "tyresta-pines",
+        "gallery": [
+          [
+            "tyresta-pines",
+            "001.1",
+            "Old pine above the bedrock."
+          ],
+          [
+            "tyresta-stream",
+            "001.2",
+            "Meltwater, early March."
+          ]
+        ]
+      }
+    },
+    {
+      "no": "002",
+      "slug": "002-kebnekaise",
+      "name": "Kebnekaise",
+      "region": "Kebnekaise massif, Kiruna",
+      "lat": 67.9044,
+      "lon": 18.5283,
+      "status": "completed",
+      "year": 2026,
+      "dates": "21–24 August 2026",
+      "short": "Aug 2026",
+      "days": 4,
+      "category": "Alpine · Summit",
+      "discipline": "alpine",
+      "difficulty": 4,
+      "difficultyLabel": "Demanding",
+      "distance_km": 18,
+      "ascent_m": 1900,
+      "high_m": 2097,
+      "highName": "Kebnekaise north top",
+      "group": 12,
+      "terrain": "Moraine, scree, the Vierranvárri shoulder, a snow ridge to the top",
+      "transport": "Night train to Kiruna, bus to Nikkaluokta, 19 km on foot to the mountain station",
+      "climate": "Late August: 0 to +12 °C at the station, below zero on the summit ridge, wind",
+      "note": "Sweden’s highest summit, by the western route. Up before four, back at the mountain station by evening.",
+      "map": "kebnekaise",
+      "relief": "kebnekaise",
+      "route": [
+        [
+          67.868,
+          18.6198
+        ],
+        [
+          67.87,
+          18.57
+        ],
+        [
+          67.881,
+          18.535
+        ],
+        [
+          67.895,
+          18.525
+        ],
+        [
+          67.9044,
+          18.5283
+        ]
+      ],
+      "log": [
+        [
+          "03:50",
+          "Kebnekaise mountain station, 690 m. Headlamps, porridge, silence."
+        ],
+        [
+          "07:10",
+          "Vierranvárri, 1,711 m. The first view of the ridge."
+        ],
+        [
+          "10:40",
+          "The north top, 2,097 m. Cloud, then no cloud."
+        ],
+        [
+          "18:20",
+          "Back at the station. 18 km, 1,900 m of ascent."
+        ]
+      ],
+      "images": {
+        "hero": "kebnekaise-ridge",
+        "gallery": [
+          [
+            "kebnekaise-ridge",
+            "002.1",
+            "The last ridge to the top."
+          ],
+          [
+            "kebnekaise-moraine",
+            "002.2",
+            "Storglaciären from the moraine."
+          ]
+        ]
+      },
+      "summits": [
+        4
+      ]
+    },
+    {
+      "no": "003",
+      "slug": "003-stockholm-archipelago",
+      "name": "Stockholm Archipelago",
+      "place": "Landsort, Öja",
+      "region": "Öja, the southern archipelago",
+      "lat": 58.7396,
+      "lon": 17.8658,
+      "status": "completed",
+      "year": 2026,
+      "dates": "12–13 September 2026",
+      "short": "Sep 2026",
+      "days": 2,
+      "category": "Coast · Two days",
+      "discipline": "hiking",
+      "difficulty": 1,
+      "difficultyLabel": "Easy",
+      "distance_km": 11,
+      "ascent_m": 120,
+      "high_m": 17,
+      "highName": "The lighthouse rock",
+      "group": 18,
+      "terrain": "Ice-polished granite shore, heath, pine, the old pilot station",
+      "transport": "Commuter train to Nynäshamn, bus to Ankarudden, boat to Öja",
+      "climate": "Mid-September: +9 to +16 °C, westerlies, cold water",
+      "note": "Öja, the southernmost island of the archipelago. Granite polished by the ice age, a night in the pilot station, Sweden’s oldest lighthouse.",
+      "log": [
+        [
+          "08:15",
+          "Nynäshamn. Rain in the forecast, none on the water."
+        ],
+        [
+          "11:00",
+          "Öja. Round the island clockwise, on the rock."
+        ],
+        [
+          "21:30",
+          "The pilot station. The lighthouse turns every nine seconds."
+        ],
+        [
+          "14:40",
+          "The boat back. 11 km, one swim, very short."
+        ]
+      ],
+      "images": {
+        "hero": "archipelago-lighthouse",
+        "gallery": [
+          [
+            "archipelago-lighthouse",
+            "003.1",
+            "Landsort, the last island south."
+          ],
+          [
+            "archipelago-granite",
+            "003.2",
+            "Granite polished by the ice."
+          ]
+        ]
+      }
+    },
+    {
+      "no": "004",
+      "slug": "004-abisko",
+      "name": "Abisko",
+      "region": "Abisko National Park, Norrbotten",
+      "lat": 68.3495,
+      "lon": 18.8312,
+      "status": "registering",
+      "year": 2026,
+      "dates": "17–19 October 2026",
+      "short": "Oct 2026",
+      "days": 3,
+      "category": "Fell · Three days",
+      "discipline": "expeditions",
+      "difficulty": 3,
+      "difficultyLabel": "Moderate",
+      "distance_km": 38,
+      "ascent_m": 1450,
+      "high_m": 1169,
+      "highName": "Njullá",
+      "group": 16,
+      "placesLeft": 5,
+      "closes": "3 October",
+      "terrain": "Birch forest, the Abisko canyon, open fell, the Njullá ridge",
+      "transport": "Night train from Stockholm C to Abisko Turiststation, 1,002 km north",
+      "climate": "Mid-October: −5 to +4 °C, first snow on the tops, about nine hours of daylight, aurora on clear nights",
+      "cost": "Train, huts and food at cost, listed when registration closes",
+      "leaders": "Two club trip leaders; a certified guide for the Njullá ridge",
+      "note": "The first expedition this far north. Birch forest in its last colour, the first snow above the treeline, and the dark coming early.",
+      "map": "abisko",
+      "relief": "abisko",
+      "route": [
+        [
+          68.3583,
+          18.7842
+        ],
+        [
+          68.335,
+          18.735
+        ],
+        [
+          68.31,
+          18.67
+        ],
+        [
+          68.2965,
+          18.6186
+        ],
+        [
+          68.32,
+          18.64
+        ],
+        [
+          68.345,
+          18.69
+        ],
+        [
+          68.3667,
+          18.7
+        ],
+        [
+          68.3583,
+          18.7842
+        ]
+      ],
+      "itinerary": [
+        {
+          "day": "Day 1",
+          "title": "Up the Abisko valley",
+          "from": "Abisko Turiststation",
+          "to": "Abiskojaure",
+          "km": 15,
+          "range": [
+            0,
+            3
+          ],
+          "text": "Off the night train at eleven. Through the canyon and up Kungsleden along the river to the hut at Abiskojaure."
+        },
+        {
+          "day": "Day 2",
+          "title": "Across the open fell",
+          "from": "Abiskojaure",
+          "to": "Njullá shoulder",
+          "km": 14,
+          "range": [
+            3,
+            5
+          ],
+          "text": "Leave the trail. North over open fell above the birches, camp or hut depending on the snow line."
+        },
+        {
+          "day": "Day 3",
+          "title": "Njullá, then the train",
+          "from": "Njullá",
+          "to": "Abisko Turiststation",
+          "km": 9,
+          "range": [
+            5,
+            7
+          ],
+          "text": "The ridge to the top at 1,169 m with the guide, down to the station for the evening train south."
+        }
+      ],
+      "packing": [
+        "Shell jacket and trousers",
+        "Insulated jacket",
+        "Two base layers, wool",
+        "Hat, buff, two pairs of gloves",
+        "Broken-in boots, gaiters",
+        "Headlamp, spare batteries",
+        "Sleeping bag to −5 °C",
+        "Thermos, 1 l water",
+        "Sit mat, spoon, mug",
+        "Map and compass, the club brings the rest"
+      ],
+      "images": {
+        "hero": "abisko-lapporten-figure",
+        "gallery": [
+          [
+            "abisko-lapporten-figure",
+            "004.1",
+            "Lapporten from the frozen shore of Torneträsk, midwinter."
+          ],
+          [
+            "abisko-lapporten-winter",
+            "004.2",
+            "Lapporten under a pink evening."
+          ],
+          [
+            "abisko-moon-ridge",
+            "004.3",
+            "Moonrise over the Abisko fells."
+          ]
+        ]
+      },
+      "summits": [
+        6
+      ]
+    },
+    {
+      "no": "005",
+      "slug": "005-sarek",
+      "name": "Sarek",
+      "region": "Sarek National Park, Jokkmokk",
+      "lat": 67.2833,
+      "lon": 17.7,
+      "status": "announced",
+      "year": 2027,
+      "dates": "12–18 March 2027",
+      "short": "Mar 2027",
+      "days": 7,
+      "category": "Winter · Seven days",
+      "discipline": "winter",
+      "difficulty": 5,
+      "difficultyLabel": "Expedition",
+      "distance_km": 70,
+      "ascent_m": 2200,
+      "high_m": 1520,
+      "highName": "Sarvesvágge pass",
+      "group": 8,
+      "opens": "1 December",
+      "terrain": "No trails, no huts, no signal. Frozen valleys and passes on ski",
+      "transport": "Night train to Gällivare, bus to Kvikkjokk, then on ski",
+      "climate": "March: −20 to −2 °C, long light, storms that last days",
+      "cost": "Listed in the dossier",
+      "leaders": "Two certified mountain leaders, ski-touring experience required",
+      "note": "A week on ski through Sarek in March, with tents and sledges. For members who have done a winter trip with the club before.",
+      "images": {
+        "hero": "expedition-tracks",
+        "gallery": [
+          [
+            "expedition-tracks",
+            "005.1",
+            "Sarvesvágge in March."
+          ],
+          [
+            "winter-valley",
+            "005.2",
+            "One skier, the whole valley."
+          ]
+        ]
+      }
+    }
+  ],
+  "activities": [
+    {
+      "key": "hiking",
+      "name": "Hiking",
+      "img": "abisko-moon-ridge",
+      "season": "All year",
+      "level": "Open to all",
+      "group": "10–25",
+      "equipment": "Boots, shell, a day pack",
+      "text": "Day trails on Sörmlandsleden and Roslagsleden, an hour from the city. Every other weekend, all year.",
+      "past": [
+        "001",
+        "003"
+      ]
+    },
+    {
+      "key": "climbing",
+      "name": "Climbing",
+      "img": "climbing-wall",
+      "season": "All year",
+      "level": "Belay course provided",
+      "group": "6–12",
+      "equipment": "Harness and shoes, lent by the club",
+      "text": "Indoor walls through the dark months, granite crags south of Stockholm from May. Belay courses for beginners.",
+      "past": []
+    },
+    {
+      "key": "alpine",
+      "name": "Alpine",
+      "img": "alpine-crevasse",
+      "season": "July – September",
+      "level": "Experience required",
+      "group": "4–12",
+      "equipment": "Crampons, axe, helmet, harness",
+      "text": "Glaciers, ropes and early starts. Always with certified mountain guides, never more than six to a rope team.",
+      "past": [
+        "002"
+      ]
+    },
+    {
+      "key": "winter",
+      "name": "Winter",
+      "img": "winter-valley",
+      "season": "December – April",
+      "level": "Open to all",
+      "group": "8–16",
+      "equipment": "Snowshoes or skis, a thermos",
+      "text": "Snowshoes, ski touring and frozen lakes. Short days, long light, very cold coffee.",
+      "past": [
+        "005"
+      ]
+    },
+    {
+      "key": "expeditions",
+      "name": "Expeditions",
+      "img": "expedition-tracks",
+      "season": "Twice a year",
+      "level": "Selected by dossier",
+      "group": "8–16",
+      "equipment": "The dossier lists it",
+      "text": "Several days, far north. Night trains, mountain huts, no signal. Two or three a year, numbered.",
+      "past": [
+        "002",
+        "004",
+        "005"
+      ]
+    }
+  ]
+}

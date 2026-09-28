@@ -5,9 +5,12 @@
 
 photos  tools/raw/*.jpg  -> assets/img/<name>-{960,1920}.webp, one shared documentary grade
 maps    Terrarium DEM tiles (public, AWS open data) -> assets/map/<name>.svg, real contour lines
+terrain 16-bit heightmaps (RG PNG) for the relief object and the contour layers -> assets/terrain/
+scandi  Scandinavia base map in transverse Mercator (coast + 600/1200 m) -> assets/map/scandinavia.svg
+routes  least-cost routes through the DEM between each expedition's waypoints, elevation profiles
+        -> data/derived.json (read by build_pages.py)
 logo    the mark geometry of v2/gen.py + Futura Medium outlines -> assets/img/logo-*.svg
 grain   assets/img/grain.png, tileable film grain for the intro
-inject  writes the logo sprite and the photo credits into ../index.html, between their markers
 
 The raw photos are not committed (see .gitignore); tools/credits.json lists where each comes from.
 """
@@ -100,8 +103,8 @@ def rdp(pts, eps):
 MAPS = {
     # Only the two northern maps: south of 60° N the open DEM mixes sources and steps at their seams.
     # name: bbox (lat0, lon0, lat1, lon1), zoom, contour step, index step, marker (lat, lon, label)
-    "abisko":     ((68.300, 18.600, 68.400, 18.950), 12, 25, 100, (68.3495, 18.8312, "ABISKO")),
-    "kebnekaise": ((67.860, 18.380, 67.945, 18.680), 12, 50, 250, (67.9044, 18.5283, "KEBNEKAISE")),
+    "abisko":     ((68.260, 18.550, 68.400, 18.950), 12, 25, 100, (68.3495, 18.8312, "ABISKO")),
+    "kebnekaise": ((67.830, 18.380, 67.945, 18.680), 12, 50, 250, (67.9044, 18.5283, "KEBNEKAISE")),
 }
 
 
@@ -216,35 +219,177 @@ def grain():
     print("grain ok")
 
 
-# ---------------------------------------------------------------- index.html
-def inject():
-    """Inline the logos as <symbol>s (so <use> works from file:// too) and list the photo credits."""
-    import html, re
-    sym = []
-    for sid, f in [("mark", "logo-mark"), ("wordmark", "logo-wordmark"), ("lockup", "logo-vertical"), ("lockup-h", "logo-horizontal")]:
-        svg = (IMG / f"{f}.svg").read_text()
-        vb = re.search(r'viewBox="([^"]+)"', svg).group(1)
-        inner = re.sub(r"^<svg[^>]*>|</svg>$", "", svg)
-        sym.append(f'<symbol id="{sid}" viewBox="{vb}" fill="currentColor">{inner}</symbol>')
-        print(sid, vb)
-    sprite = '<svg class="sprite" aria-hidden="true" style="position:absolute;width:0;height:0">' + "".join(sym) + "</svg>"
-    lic = {"CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/", "CC BY-SA 3.0": "https://creativecommons.org/licenses/by-sa/3.0/",
-           "CC BY 2.0": "https://creativecommons.org/licenses/by/2.0/", "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/",
-           "CC0": "https://creativecommons.org/publicdomain/zero/1.0/", "Public domain": "https://en.wikipedia.org/wiki/Public_domain"}
-    items = []
-    for name, c in json.loads((SITE / "tools/credits.json").read_text()).items():
-        title = c["title"].removeprefix("File:").rsplit(".", 1)[0]
-        items.append(f'<li><a href="{html.escape(c["page"])}" rel="noopener">{html.escape(title)}</a>, '
-                     f'{html.escape(c["artist"] or "unknown")}, <a href="{lic[c["lic"]]}" rel="noopener">{c["lic"]}</a>. Graded and cropped.</li>')
-    credits = '<ul class="credits-list">' + "".join(items) + "</ul>"
-    page = SITE.parent / "index.html"          # the page sits at the repo root, for GitHub Pages
-    t = page.read_text()
-    t = re.sub(r"<!-- sprite -->.*?<!-- /sprite -->", lambda m: f"<!-- sprite -->{sprite}<!-- /sprite -->", t, flags=re.S)
-    t = re.sub(r"<!-- credits -->.*?<!-- /credits -->", lambda m: f"<!-- credits -->{credits}<!-- /credits -->", t, flags=re.S)
-    page.write_text(t)
+# ---------------------------------------------------------------- terrain, routes, Scandinavia
+DATA = SITE / "data"
+TERRAIN = SITE / "assets/terrain"
+
+
+def smooth_dem(Z, k=(1, 4, 6, 4, 1)):
+    k = np.array(k, np.float32); k /= k.sum()
+    Z = np.pad(Z, len(k) // 2, mode="edge")
+    Z = np.apply_along_axis(lambda r: np.convolve(r, k, "valid"), 1, Z)
+    return np.apply_along_axis(lambda c: np.convolve(c, k, "valid"), 0, Z)
+
+
+def area(name):
+    bbox, z = MAPS[name][0], MAPS[name][1]
+    return bbox, np.maximum(smooth_dem(dem(bbox, z)), -1.0)
+
+
+def derived():
+    f = DATA / "derived.json"
+    return json.loads(f.read_text()) if f.exists() else {}
+
+
+def save_derived(d):
+    (DATA / "derived.json").write_text(json.dumps(d, separators=(",", ":")))
+
+
+def terrain():
+    """RG-encoded 16-bit heightmaps: R = high byte, G = low byte of (h - min) / (max - min)."""
+    TERRAIN.mkdir(parents=True, exist_ok=True)
+    d = derived(); d.setdefault("terrain", {})
+    for name in MAPS:
+        bbox, Z = area(name)
+        im = Image.fromarray(Z.astype(np.float32), "F").resize((384, 384), Image.BILINEAR)
+        A = np.asarray(im, np.float64)
+        lo, hi = float(A.min()), float(A.max())
+        q = np.round((A - lo) / (hi - lo) * 65535).astype(np.uint32)
+        rgb = np.stack([q >> 8, q & 255, np.zeros_like(q)], -1).astype(np.uint8)
+        Image.fromarray(rgb, "RGB").save(TERRAIN / f"{name}.png", optimize=True)
+        lat0, lon0, lat1, lon1 = bbox
+        w_km = (lon1 - lon0) * 111.32 * math.cos(math.radians((lat0 + lat1) / 2)); h_km = (lat1 - lat0) * 110.57
+        d["terrain"][name] = dict(min=round(lo), max=round(hi), bbox=bbox, km=[round(w_km, 2), round(h_km, 2)])
+        print("terrain", name, f"{lo:.0f}-{hi:.0f} m", f"{w_km:.1f}x{h_km:.1f} km")
+    save_derived(d)
+
+
+def hav(a, b):
+    la1, lo1, la2, lo2 = map(math.radians, (*a, *b))
+    h = math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    return 2 * 6371 * math.asin(math.sqrt(h))
+
+
+def routes():
+    """Trails follow the ground: a least-cost path (cost grows with slope squared) between waypoints."""
+    from skimage.graph import route_through_array
+    data = json.loads((DATA / "expeditions.json").read_text())
+    d = derived(); d.setdefault("routes", {})
+    for e in data["expeditions"]:
+        if "route" not in e:
+            continue
+        bbox, Z = area(e["map"])
+        lat0, lon0, lat1, lon1 = bbox
+        h, w = Z.shape
+        to_px = lambda la, lo: (int(round((lat1 - la) / (lat1 - lat0) * (h - 1))), int(round((lo - lon0) / (lon1 - lon0) * (w - 1))))
+        cell = hav((lat0, lon0), (lat0, lon0 + (lon1 - lon0) / w)) * 1000
+        gy, gx = np.gradient(Z, cell)
+        cost = 1 + 30 * (gx ** 2 + gy ** 2) + 40 * (Z < 0.5)            # steep ground and the sea are expensive
+        pts = [to_px(*q) for q in e["route"]]
+        for i in e.get("summits", []):                                   # published summit coordinates are rounded:
+            r0, c0 = pts[i]; rr = 30                                       # take the highest ground within ~1 km
+            win = Z[max(0, r0 - rr):r0 + rr + 1, max(0, c0 - rr):c0 + rr + 1]
+            dr, dc = np.unravel_index(np.argmax(win), win.shape)
+            pts[i] = (max(0, r0 - rr) + dr, max(0, c0 - rr) + dc)
+        path, marks = [], [0]
+        for a, b in zip(pts[:-1], pts[1:]):
+            seg, _ = route_through_array(cost, a, b, fully_connected=True, geometric=True)
+            path += seg if not path else seg[1:]
+            marks.append(len(path) - 1)
+        P = np.array(path, np.float64)
+        k = 5; Ps = np.array([P[max(0, i - k):i + k + 1].mean(0) for i in range(len(P))])  # take the pixel steps out
+        lat = lat1 - Ps[:, 0] / (h - 1) * (lat1 - lat0); lon = lon0 + Ps[:, 1] / (w - 1) * (lon1 - lon0)
+        elev = Z[P[:, 0].astype(int), P[:, 1].astype(int)]
+        dist = np.concatenate([[0], np.cumsum([hav((lat[i], lon[i]), (lat[i + 1], lon[i + 1])) for i in range(len(lat) - 1)])])
+        total = float(dist[-1])
+        # SVG space of the area map (width 1000) and UV space of the relief (0..1)
+        W, H = 1000.0, 1000.0 * h / w
+        xy = np.stack([(lon - lon0) / (lon1 - lon0) * W, (lat1 - lat) / (lat1 - lat0) * H], 1)
+        keep = rdp(xy, 1.2)
+        idx = [int(np.argmin(np.abs(xy[:, 0] - x) + np.abs(xy[:, 1] - y))) for x, y in keep]
+        n = 160; samp = np.linspace(0, total, n)
+        prof = np.interp(samp, dist, elev)
+        top = int(np.argmax(elev))
+        d["routes"][e["slug"]] = dict(
+            map=e["map"], w=W, h=round(H, 1),
+            path=[[round(float(x), 1), round(float(y), 1)] for x, y in keep],
+            t=[round(float(dist[i] / total), 4) for i in idx],
+            uv=[[round(float(x / W), 4), round(float(y / H), 4)] for x, y in keep],
+            ll=[[round(float(lat[i]), 5), round(float(lon[i]), 5), round(float(elev[i]))] for i in idx],
+            marks=[round(float(dist[m] / total), 4) for m in marks],
+            km=round(total, 1), gain=round(float(np.clip(np.diff(prof), 0, None).sum())),
+            profile=[round(float(v)) for v in prof], top=[round(float(lat[top]), 4), round(float(lon[top]), 4), round(float(elev[top]))],
+        )
+        print("route", e["slug"], f"{total:.1f} km", f"+{d['routes'][e['slug']]['gain']} m", f"top {elev[top]:.0f} m", len(keep), "pts")
+    save_derived(d)
+
+
+# spherical transverse Mercator on 15° E, the meridian Sweden is drawn on
+R_E, LON0 = 6371.0, 15.0
+def tm(lat, lon):
+    la, dl = np.radians(lat), np.radians(np.asarray(lon) - LON0)
+    return R_E * np.arctanh(np.cos(la) * np.sin(dl)), R_E * np.arctan2(np.tan(la), np.cos(dl))
+def tm_inv(x, y):
+    D = y / R_E
+    return np.degrees(np.arcsin(np.sin(D) / np.cosh(x / R_E))), LON0 + np.degrees(np.arctan2(np.sinh(x / R_E), np.cos(D)))
+
+
+def scandi():
+    import matplotlib; matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from scipy.ndimage import map_coordinates
+    z = 6
+    lat0, lon0, lat1, lon1 = 54.0, 3.0, 71.6, 33.0
+    x0, y0 = tile_xy(lat1, lon0, z); x1, y1 = tile_xy(lat0, lon1, z)
+    M = dem((lat0, lon0, lat1, lon1), z)                                     # web-mercator mosaic of the bbox
+    tx0, ty0 = x0, y0
+    # the frame: Norway's coast to Finland's east, Denmark to the North Cape
+    X0, X1 = -560.0, 900.0; Y0, Y1 = float(tm(54.5, 15)[1]), float(tm(71.3, 15)[1])
+    W = 1000; H = int(round(W * (Y1 - Y0) / (X1 - X0)))
+    gx, gy = np.meshgrid(np.linspace(X0, X1, W), np.linspace(Y1, Y0, H))
+    la, lo = tm_inv(gx, gy)
+    px = [tile_xy(a, b, z) for a, b in [(0, 0)]]  # noqa (keeps tile_xy semantics explicit)
+    mx = ((lo + 180) / 360 * 2 ** z - tx0) * 256
+    my = ((1 - np.arcsinh(np.tan(np.radians(la))) / math.pi) / 2 * 2 ** z - ty0) * 256
+    G = map_coordinates(M, [my, mx], order=1, mode="nearest")
+    G = smooth_dem(G, (1, 2, 1))
+    from scipy.ndimage import gaussian_filter
+    Gm = gaussian_filter(G, 2.2)                                            # the relief lines are generalised, the coast is not
+    out = {}
+    for lv, wdt, op in [(0.0, 0.9, 1.0), (700.0, 0.45, 0.45), (1300.0, 0.45, 0.7)]:
+        cs = plt.contour(np.arange(W), np.arange(H), G if lv == 0 else Gm, levels=[lv])
+        segs = []
+        for s in cs.allsegs[0]:
+            if len(s) < (14 if lv == 0 else 22):
+                continue
+            s = rdp(np.asarray(s), 0.7)
+            segs.append("M" + " ".join(f"{x:.1f} {y:.1f}" for x, y in s))
+        plt.close("all")
+        out[lv] = (segs, wdt, op)
+    to_svg = lambda la_, lo_: (float((tm(la_, lo_)[0] - X0) / (X1 - X0) * W), float((Y1 - tm(la_, lo_)[1]) / (Y1 - Y0) * H))
+    grat = []
+    for L in (55, 60, 65, 70):
+        pts = [to_svg(L, lo_) for lo_ in np.linspace(0, 36, 60)]
+        grat.append("M" + " ".join(f"{x:.1f} {y:.1f}" for x, y in pts))
+    for Lo in (5, 10, 15, 20, 25, 30):
+        pts = [to_svg(la_, Lo) for la_ in np.linspace(53, 72, 40)]
+        grat.append("M" + " ".join(f"{x:.1f} {y:.1f}" for x, y in pts))
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" fill="none" stroke="#1D1D1B" stroke-linejoin="round" stroke-linecap="round">'
+           f'<path stroke-width="0.4" stroke-dasharray="1 4" opacity="0.5" d="{" ".join(grat)}"/>'
+           + "".join(f'<path stroke-width="{wdt}" opacity="{op}" d="{" ".join(segs)}"/>' for segs, wdt, op in out.values())
+           + "</svg>")
+    (MAP / "scandinavia.svg").write_text(svg)
+    data = json.loads((DATA / "expeditions.json").read_text())
+    d = derived()
+    d["scandinavia"] = dict(w=W, h=H,
+        stockholm=[round(v, 1) for v in to_svg(59.3417, 18.0572)],
+        points={e["slug"]: [round(v, 1) for v in to_svg(e["lat"], e["lon"])] for e in data["expeditions"]},
+        lat={L: [round(v, 1) for v in to_svg(L, 4)] for L in (55, 60, 65, 70)})
+    save_derived(d)
+    print("scandinavia", W, H, len(svg) // 1024, "KB")
 
 
 if __name__ == "__main__":
-    jobs = sys.argv[1:] or ["photos", "maps", "logo", "grain", "inject"]
+    jobs = sys.argv[1:] or ["photos", "maps", "logo", "grain", "terrain", "scandi", "routes"]
     for j in jobs:
         globals()[j]()

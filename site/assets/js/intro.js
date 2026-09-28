@@ -13,6 +13,24 @@ const DEBUG_P = params.has('p') ? parseFloat(params.get('p')) : null;   // ?p=0.
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const coarse = matchMedia('(pointer: coarse)').matches || innerWidth < 760;
 
+// An opening title, not a section: it plays on load (and on every reload), runs once, then it is over.
+// Coming back to Home from another page in the same visit goes straight to the title card.
+const navType = performance.getEntriesByType('navigation')[0]?.type;
+const play = DEBUG_P != null || params.has('intro') || navType === 'reload' || sessionStorage.getItem('hc-intro') !== 'seen';
+let done = false;
+function markDone() {
+  section.classList.add('is-done');
+  root.classList.add('intro-complete');
+  stage.style.setProperty('--p', '1');
+  try { sessionStorage.setItem('hc-intro', 'seen'); } catch (e) { /* private mode: replays, harmless */ }
+}
+if (!play || reduced) {
+  markDone();
+  if (!play) return;
+}
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+scrollTo(0, 0);
+
 // ---------------------------------------------------------------- math
 const V = {
   add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
@@ -39,23 +57,25 @@ const CLIMBER = V.add(V.add(SUMMIT, V.add(V.mul(TX, CU), V.mul(TY, CV))), V.mul(
 const at = (n, x, y, up = 0) => V.add(V.add(V.add(CLIMBER, V.mul(NF, n)), V.add(V.mul(TX, x), V.mul(TY, y))), [0, up, 0]);
 const LOOK = V.add(CLIMBER, [0, 1.1, 0]);
 
-// Camera keys: progress, position, target, vertical fov (deg)
+// Camera keys: progress, position, target, vertical fov (deg).
+// The climber is there for scale: we find them, travel along the wall beside them, and never close in.
 const KEYS = [
   [0.00, [-150, 430, 5900], [40, 660, 0], 40],
   [0.15, [-120, 440, 4500], [40, 650, 0], 40],
   [0.31, [-70, 455, 3100], [40, 630, 0], 38],
   [0.47, [0, 480, 1800], [45, 610, -60], 36],
   [0.62, at(620, -10, -120), LOOK, 30],
-  [0.76, at(260, 20, -60), LOOK, 30],
-  [0.82, at(70, 10, -40), LOOK, 30],
-  [0.86, at(2.4, 8, -19), at(0, 0, 2.5, 1.2), 32],
-  [0.91, at(2.0, 5.5, -9), at(0, 0, 3, 1.3), 34],
-  [0.95, at(4, 4, 6), at(0, 0, 70), 36],
-  [1.00, at(8, 3, 30), at(0, 0, 250), 38],
+  [0.72, at(300, 30, -70), LOOK, 28],
+  [0.79, at(140, 45, -30), at(0, 0, 2, 1.2), 26],
+  [0.85, at(128, -10, -8), at(0, -8, 4, 1), 26],
+  [0.90, at(122, -62, 14), at(0, -16, 12, 1), 27],
+  [0.95, at(150, -100, 50), at(40, -140, 220), 31],
+  [1.00, at(175, -125, 95), at(60, -170, 330), 33],
 ];
 
 // Atmosphere keys: progress, fog colour (linear), fog density, cloud bank, sun colour, exposure, sun direction.
-// It opens in the club's navy, before dawn, and ends in the paper of the page.
+// It opens in the club's navy, before dawn. At the end a cloud bank rolls over the wall: contrast goes,
+// luminance rises, and the fog itself becomes the paper of the page.
 const LOOKS = [
   [0.00, [0.0035, 0.0085, 0.019], 0.00028, 0.12, [0.30, 0.34, 0.46], 1.0, [0.30, 0.12, -1.0]],
   [0.10, [0.0080, 0.0140, 0.026], 0.00060, 1.00, [0.20, 0.21, 0.24], 1.0, [0.40, 0.16, -0.9]],
@@ -63,9 +83,11 @@ const LOOKS = [
   [0.34, [0.070, 0.082, 0.100], 0.00024, 0.25, [1.20, 1.10, 1.00], 1.0, [0.78, 0.30, -0.45]],
   [0.50, [0.110, 0.125, 0.145], 0.00013, 0.06, [2.20, 2.05, 1.85], 1.0, [0.82, 0.40, -0.05]],
   [0.70, [0.150, 0.165, 0.185], 0.00012, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
-  [0.86, [0.220, 0.235, 0.250], 0.00022, 0.30, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
-  [0.94, [0.620, 0.630, 0.630], 0.01200, 1.00, [3.00, 2.80, 2.60], 1.05, [0.80, 0.42, 0.05]],
-  [1.00, [0.900, 0.890, 0.860], 0.08000, 1.00, [3.00, 2.80, 2.60], 1.1, [0.80, 0.42, 0.05]],
+  [0.87, [0.230, 0.245, 0.262], 0.00026, 0.55, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
+  [0.905, [0.400, 0.415, 0.430], 0.00110, 1.40, [2.60, 2.45, 2.30], 1.0, [0.80, 0.42, 0.05]],
+  [0.94, [0.660, 0.668, 0.668], 0.00500, 2.40, [2.80, 2.70, 2.55], 1.04, [0.80, 0.42, 0.05]],
+  [0.97, [0.960, 0.950, 0.915], 0.02500, 3.20, [3.00, 2.90, 2.75], 1.08, [0.80, 0.42, 0.05]],
+  [1.00, [1.160, 1.135, 1.080], 0.09000, 3.60, [3.00, 2.90, 2.75], 1.10, [0.80, 0.42, 0.05]],
 ];
 
 function sampleKeys(keys, p) {
@@ -137,7 +159,7 @@ uniform sampler3D uNoise;
 uniform vec2 uRes; uniform float uTime, uFocal, uPix;
 uniform vec3 uCam, uCamR, uCamU, uCamF;
 uniform vec3 uSunDir, uSunCol, uFogCol;
-uniform float uFogDen, uCloud, uWhite, uTMax, uExposure;
+uniform float uFogDen, uCloud, uWhite, uTMax, uExposure, uVig;
 uniform vec3 uPaper;
 uniform int uSteps, uCloudSteps, uQuality;
 out vec4 outColor;
@@ -404,7 +426,7 @@ vec4 clouds(vec3 ro, vec3 rd, float tHit, vec2 fc){
     if (i >= uCloudSteps) break;
     vec3 p = ro + rd * t - wind;
     float d = n3(p / 110.0) * 0.55 + n3(p / 36.0) * 0.3 + n3(p / 11.0) * 0.15;
-    d = smoothstep(0.46, 0.72, d) * uCloud;
+    d = (smoothstep(0.46, 0.72, d) + 0.16 * max(uCloud - 1.0, 0.0)) * uCloud;   // thickens, keeps its wisps
     float a = 1.0 - exp(-d * dt * 0.035);
     L += T * a * lit; T *= 1.0 - a;
     t += dt;
@@ -448,7 +470,7 @@ void main(){
   col = pow(col, vec3(1.0 / 2.2));
   col = mix(col, col * vec3(0.95, 0.985, 1.04), 1.0 - col.g);           // cold shadows
   vec2 q = fc / uRes - 0.5;
-  col *= 1.0 - 0.32 * (1.0 - uWhite) * dot(q, q) * 1.6;
+  col *= 1.0 - 0.32 * uVig * dot(q, q) * 1.6;
   col = mix(col, uPaper, uWhite);
   col += (hash12(fc + uTime * 13.0) - 0.5) / 255.0;                     // dither the fog gradients
   outColor = vec4(col, 1.0);
@@ -654,12 +676,12 @@ let scale = coarse ? 0.75 : 0.62;            // render resolution, in CSS pixels
 const MAX_SCALE = Math.min(devicePixelRatio || 1, coarse ? 1.25 : 1.5);
 const MIN_SCALE = 0.3;
 let quality = coarse ? 1 : 2, cooldown = 60;
-let pShown = DEBUG_P ?? 0, running = false, visible = true, t0 = performance.now(), last = t0, frames = 0, acc = 0, prevCam = null;
+let pShown = DEBUG_P ?? 0, target = 0, running = false, visible = true, raf = 0;
+let t0 = performance.now(), last = t0, frames = 0, acc = 0, prevCam = null;
 
 function scrollProgress() {
-  const r = section.getBoundingClientRect();
-  const span = section.offsetHeight - innerHeight;
-  return span > 0 ? clamp(-r.top / span) : 0;
+  const span = (section.offsetHeight - innerHeight) * 0.96;     // complete while the stage is still pinned
+  return span > 0 ? clamp(-section.getBoundingClientRect().top / span) : 0;
 }
 
 function resize() {
@@ -668,13 +690,29 @@ function resize() {
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
 }
 
+// The end: the stage stays exactly where it is on screen and becomes the first screen of the page,
+// the scroll length it used is removed, and the GPU is released. Scrolling up later is just the page.
+function finish(toTop) {
+  if (done || DEBUG_P != null) return;
+  done = true;
+  const extra = section.offsetHeight - stage.offsetHeight;
+  const y = toTop ? 0 : Math.max(0, scrollY - extra);
+  markDone();
+  scrollTo(0, y);
+  cancelAnimationFrame(raf);
+  if (audio) { audio.master.gain.setTargetAtTime(0, audio.ac.currentTime, 0.2); setTimeout(() => audio.ac.close(), 1500); }
+  gl?.getExtension('WEBGL_lose_context')?.loseContext();
+  canvas.remove();
+}
+
 function frame(now) {
   running = false;
-  if (!visible || !ctx) return;
+  if (!visible || !ctx || done) return;
   const dt = Math.min((now - last) / 1000, 0.1); last = now;
   const time = (now - t0) / 1000;
-  const target = DEBUG_P ?? (reduced ? 0.4 : scrollProgress());   // reduced motion: one still plate, the massif in cloud
-  pShown = reduced || DEBUG_P != null ? target : pShown + (target - pShown) * (1 - Math.exp(-dt * 3.2));
+  target = DEBUG_P ?? (reduced ? 0.4 : scrollProgress());
+  pShown = reduced || DEBUG_P != null ? target : pShown + (target - pShown) * (1 - Math.exp(-dt * 2.6));
+  if (target >= 1 && pShown > 0.994 && !reduced) { finish(false); return; }
   const p = pShown;
 
   resize();
@@ -689,7 +727,7 @@ function frame(now) {
   const tmax = Math.min(9000, 7.0 / (L.den * 0.55 + 1e-6));
   const vel = prevCam && dt > 0 ? V.mul(V.sub(cam.pos, prevCam), 1 / dt) : [0, 0, 0];
   prevCam = cam.pos;
-  const white = smooth(clamp((p - 0.95) / 0.03));
+  const white = smooth(clamp((p - 0.975) / 0.02));   // the fog is already white by then: this only settles the last bit
 
   const { scene, snow } = ctx;
   gl.viewport(0, 0, W, H);
@@ -705,6 +743,7 @@ function frame(now) {
   gl.uniform3fv(U.uSunCol, L.sun); gl.uniform3fv(U.uFogCol, L.fog);
   gl.uniform1f(U.uFogDen, L.den); gl.uniform1f(U.uCloud, L.cloud); gl.uniform1f(U.uWhite, white);
   gl.uniform1f(U.uTMax, tmax); gl.uniform1f(U.uExposure, L.exposure);
+  gl.uniform1f(U.uVig, 1 - smooth(clamp((p - 0.87) / 0.1)));
   gl.uniform3f(U.uPaper, 0.957, 0.949, 0.933);
   gl.uniform1i(U.uSteps, coarse ? 110 : 180);
   gl.uniform1i(U.uCloudSteps, coarse ? 7 : 12);
@@ -723,8 +762,8 @@ function frame(now) {
     gl.uniform1f(S.uFocalPx, focal * H * 0.5);
     gl.uniform1f(S.uDen, L.den);
     gl.uniform2f(S.uRes, W, H);
-    const bright = 0.55 + 0.45 * clamp(p / 0.5);
-    gl.uniform3f(S.uColor, 0.8 * bright * (1 - white), 0.84 * bright * (1 - white), 0.9 * bright * (1 - white));
+    const bright = (0.55 + 0.45 * clamp(p / 0.5)) * (1 - smooth(clamp((p - 0.9) / 0.07)));   // flakes vanish into the cloud
+    gl.uniform3f(S.uColor, 0.8 * bright, 0.84 * bright, 0.9 * bright);
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.bindVertexArray(ctx.vao);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, ctx.COUNT);
@@ -732,7 +771,7 @@ function frame(now) {
   }
 
   overlay(reduced ? 0 : p, cam, vp, stage.clientWidth, stage.clientHeight);
-  stage.classList.toggle('is-light', p > 0.84 && !reduced);
+  stage.classList.toggle('is-light', p > 0.88 && !reduced);
   updateAudio(p, time);
 
   // adaptive resolution. Under vsync a fast frame and a barely-fast one look the same, so the
@@ -751,13 +790,18 @@ function frame(now) {
   if (!reduced || DEBUG_P != null) request();
 }
 
-function request() { if (!running) { running = true; requestAnimationFrame(frame); } }
+function request() { if (!running && !done) { running = true; raf = requestAnimationFrame(frame); } }
 
 if (ctx) {
   root.classList.add('has-webgl');
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) request(); }).observe(section);
+  // scrolled away before the camera caught up (a fast flick, a #hash): the intro is over all the same
+  new IntersectionObserver(([e]) => {
+    visible = e.isIntersecting;
+    if (visible) request(); else if (target >= 1 || scrollProgress() >= 1) finish(false);
+  }).observe(section);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { last = performance.now(); request(); } });
   if (reduced) addEventListener('resize', () => requestAnimationFrame(frame));
+  section.querySelector('.intro-skip')?.addEventListener('click', (e) => { e.preventDefault(); finish(true); section.querySelector('.intro-end h2, .intro-end')?.focus?.(); });
   request();
-}
+} else markDone();
 })();

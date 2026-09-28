@@ -1,92 +1,105 @@
 # Hiking Club — website
 
-One static page, no build step, no dependencies. The page itself is `index.html` at the repo root,
-so GitHub Pages serves it at the site's address; everything it loads lives here in `site/`. Open it,
-or serve the repo root (`python3 -m http.server`) to get the font preloads as well.
+A static, multi-page site with no framework and no runtime dependencies. GitHub Pages serves the
+repo root. Pages are generated from one dataset; assets live in `site/`.
 
 ```
-../index.html           all content, in reading order
-assets/css/site.css     the design system below
-assets/js/intro.js      the ascent: WebGL2 raymarcher + snow, scroll-driven camera, wind
-assets/js/site.js       reveals, navigation theme, disciplines, join form
-assets/img, map, fonts  derived assets — rebuilt by tools/build_assets.py
-tools/build_assets.py   photos (grade + WebP), contour maps (open DEM), logo (Futura outlines), sprite + credits
+index.html, expeditions/, archive/, activities/, the-club/, join/   generated pages (do not edit by hand)
+site/data/expeditions.json   the source of truth: expeditions 001–005, activities
+site/data/derived.json       computed from open elevation data: routes, profiles, terrain, map positions
+site/tools/build_assets.py   photos, contour maps, heightmaps, Scandinavia map, least-cost routes, logo
+site/tools/build_pages.py    renders every page from the data (shared head, header, footer, menu)
+site/assets/css/site.css     the design system
+site/assets/js/site.js       the motion system: one rAF loop, scene progress (--p), parallax, maps, rope
+site/assets/js/intro.js      the ascent (home only): WebGL2 raymarcher, plays once, then releases the GPU
+site/assets/js/relief.js     the terrain object: a cut block of real terrain, contours, route drawn on scroll
+site/assets/js/contours.js   live contour layers: marching squares over the heightmaps, flowing with scroll
+site/assets/js/rock.js       the granite fragment in Activities → Climbing
 ```
+
+Rebuild after changing data: `python3 site/tools/build_assets.py routes && python3 site/tools/build_pages.py`.
+Serve the root to try it: `python3 -m http.server` (heightmaps are read from canvas, which needs http).
 
 ## Before launch — placeholders
 
 | What | Where |
 |---|---|
-| Club inbox. The form composes an email to it. Swap it for a form endpoint if the board has one | `../index.html`, `data-mailto` on `.join-form` |
-| Expedition 004: dates, places left, closing date, distance | `../index.html`, section 02 |
-| Archive 001–003: dates, group sizes, distances and notes are illustrative | `../index.html`, section 03 |
-| Facts row under the manifesto (004 / 68.35° N / 2,097 m / 1,002 km) follows the archive | `../index.html`, section 01 |
+| Club inbox. The form composes an email to it | `build_pages.py`, `data-mailto` in `join()` |
+| Dates, group sizes, places left, costs, itineraries, field logs | `site/data/expeditions.json` |
+| Expedition 005 Sarek is an announced example | same |
+| The board: roles are listed, names are "To be announced" | `build_pages.py`, `club()` |
+| FAQ answers about fees and allocation | `build_pages.py`, `FAQ` |
 
-Coordinates, summit heights and the Stockholm–Abisko distance are real.
+Real: coordinates, summit heights, stations and huts, the terrain, the routes' shape and length
+(computed from the elevation model), the distance from Sveavägen, the night train.
 
-## Design system
+## Information architecture
 
-**Colour.** Paper `#F4F2EE` and ink `#1D1D1B` carry the page. Navy `#0B1B2E` is the night: the intro
-opens in it, and *What we do*, *Join* and the footer return to it. Slate `#526579` is secondary text on
-paper, `#8FA0B3` on navy. Rope `#D98E3C` appears three times: the climber's jacket, the
-"registration open" dot, and the hover fill of the one button that commits you. Never use it for text on paper (2.38:1).
+| Route | Purpose |
+|---|---|
+| `/` | The ascent, a title card, then an overview: statement, next expedition, 1,002 km north, activities, archive, the club, join |
+| `/expeditions/` | Upcoming dossiers (status, dates, difficulty, distance, places), then the completed ones |
+| `/expeditions/<no>-<name>/` | One dossier per expedition: facts, route map + elevation profile + stages, terrain model, photographs, field log, packing list, registration |
+| `/archive/` | The record by year, as a list or on the map of Scandinavia |
+| `/activities/` | Five scenes: hiking, climbing, alpine, winter, expeditions — season, level, group, equipment, past trips |
+| `/the-club/` | SASSE and SSE, philosophy, the three rules, safety, the board, history |
+| `/join/` | Who can join, membership, experience, costs, how expeditions work, FAQ, the form |
 
-**Type.** Newsreader (display cut, opsz 72, weights 300–500) for everything that is read as a
-statement: headlines, place names, numbers in the facts row, the three rules. Schibsted Grotesk
-(400–600) for everything that is information: labels, body, coordinates. The Futura wordmark exists only as
-outlines inside the logo. Labels are 11 px, uppercase, +0.14 em, tabular figures. Scale, fluid:
-label 11 · small 13 · body 15–17 · lead 20–28 · h3 30–56 · h2 44–104 · display 52–212 px.
+## The intro
 
-**Grid.** 12 columns, gutter `clamp(14px, 1.7vw, 32px)`, outer margin `clamp(20px, 5.4vw, 104px)` (the brand
-boards' 6 %). Section padding `clamp(104px, 11vw, 176px)`. Every section opens with the same row as the
-brand boards: number, name, one fact on the right, over a hairline.
+It plays on load and on every reload; walking back to Home from another page in the same visit goes
+straight to the title card. The camera finds the climber, travels beside the wall and never closes in;
+a cloud bank rolls over, contrast and depth go, the fog itself turns into the page's paper, and the
+title card condenses out of it. At that point the stage becomes the first screen of the page: its
+scroll length is removed without moving what you see, the canvas is deleted and the WebGL context is
+released. Scrolling up afterwards is just the page. `?intro` replays it (the title card's *Replay the
+ascent* links there). `?p=0.62` freezes the camera; `?cam=…` places it (see `intro.js`).
 
-**Lines.** Hairlines only, 1 px, ink or paper at 16 %. No shadows, no radii, no gradients in the UI.
+## Motion language
 
-**Images.** One documentary grade for all photographs (desaturated, matte floor, cool shadows), done at
-build time. Numbered captions (`004.1`, `Plate`). People are small in the frame on purpose.
+Everything is drawn from the club's world, and nothing moves without a reason.
 
-**Buttons.** Rectangles, 56 px, a label and an arrow. Hover: a second fill rises from the bottom
-(ink → navy; paper → rope on the join form). Links: a hairline that retracts.
+- **Contours** (`contours.js`): the real terrain of Abisko or Kebnekaise, traced live. Scroll shifts the
+  contour interval through the terrain so the lines migrate; they part by a few pixels around the pointer;
+  a fast scroll stretches them by a hair. Page heads, the statement, Hiking, the mobile menu.
+- **The relief** (`relief.js`), the signature object: a sculptural block of real terrain, stone top,
+  graphite sides, contours every 50 m. It turns with the scroll and leans towards the pointer. With a
+  route, the route draws itself along the ground and the coordinates of its head update.
+- **Routes**: Stockholm → destination arcs on the Scandinavia map (home: *1,002 km north*, counting
+  kilometres and latitude), and trail routes on the area maps, drawn by scrolling through the stages.
+  Hover a stage and its segment is picked out on the map.
+- **The rope** (the club page): a verlet rope through the three rules, nudged by scroll velocity.
+- **Photographs**: they rise out of masks, drift a few pixels behind a fast scroll, and in the
+  archive they emerge from their coordinates.
+- **Page transitions**: native cross-document View Transitions. The new page rises behind a ridge
+  line, the header stays put, and an expedition's photograph and name travel from the list into the
+  dossier. Browsers without support navigate normally.
 
-**Motion.** Everything eases out (`cubic-bezier(.16,1,.3,1)`) over 0.9–1.6 s; nothing bounces. Headlines
-rise line by line out of masks. Photographs unmask upwards and settle from 108 %. Archive rows open from
-their centre line onto the photograph (a horizon slit). `prefers-reduced-motion` removes all of it.
+## Moments
 
-**Navigation.** Hidden during the ascent, it appears with the page. It takes the theme of the section
-under it and underlines the section you are in. Under 860 px it becomes a full-screen serif menu.
+1. The ascent and the whiteout.
+2. *From Stockholm, outward.*: the Kebnekaise relief turns between the two lines.
+3. *1,002 km north* on home, and the route on every dossier, drawn by scrolling.
+4. The archive map: photographs grow out of the points.
+5. Activities: the terrain drifts (Hiking), granite crosses the headline (Climbing), the white takes the
+   page (Alpine), the page goes cold (Winter), every route draws at once (Expeditions).
 
-## The ascent
+## System
 
-A sticky canvas over 640 vh of scroll (520 vh on phones). The camera follows the scrollbar with damping,
-so scrolling itself is never hijacked.
+Colour, type, grid, lines, buttons and reveals are unchanged from V1: paper `#F4F2EE`, ink `#1D1D1B`,
+navy `#0B1B2E`, slate, and rope `#D98E3C` only for the climber, routes, the rope and "registering".
+Newsreader for statements, Schibsted Grotesk for information, 12 columns, hairlines, numbered rows.
 
-| Progress | Chapter | What happens |
-|---|---|---|
-| 0–0.28 | 01 Whiteout | Navy before dawn. The logo, then cloud streaming past |
-| 0.28–0.44 | 02 Emergence | Out of the cloud. The massif appears through the fog |
-| 0.44–0.60 | 03 The wall | A 1,150 m north face. A snow couloir cuts it at 2:1, the slope of the mark's cleft |
-| 0.60–0.75 | 04 One climber | *Fig. 01* pins a speck in the couloir: one climber, 1.8 m |
-| 0.75–0.93 | 04 | The approach, then a low shot up the couloir: rope, ice axes, a jacket in the club's colour |
-| 0.93–1.00 | 05 Silence | Past the climber into cloud. The whiteout becomes the paper of the page; the wind stops |
+## Performance
 
-Everything is one full-screen raymarch: the rock is a ridged multifractal stretched along the fall line,
-the couloir is carved into the face, and the climber and rope are distance fields. Fog is a height layer plus
-drifting cloud, sampled along each ray. Snow is a second, instanced pass of motion-blurred streaks.
-
-Tuning: `KEYS` (camera) and `LOOKS` (atmosphere, keyed by progress) at the top of `intro.js`. `?p=0.62`
-freezes the camera at a progress value. `?cam=n,x,y,up,tn,tx,ty,tup,fov` places it in face coordinates,
-relative to the climber.
-
-Performance: render resolution adapts live (drops on missed frames, probes back up after a quiet
-spell), then soft shadows and AO go. Phones start at lower quality. Rendering stops once the
-intro is off screen. On an M4, a 900 × 560 internal frame costs 10–20 ms.
-
-Fallbacks: no WebGL2 → a photograph with the same title; reduced motion → one still frame, no scroll
-length. The *Skip intro* link is the first control on the page.
+One rAF loop for the whole site, asleep unless something moves; every canvas stops off screen; the
+relief and the rock render only when their input changed; the intro adapts its resolution and quality
+and is disposed once it has played. Photographs are WebP at two sizes, lazy, with dimensions. Scrolling
+measures 60 fps on an M4 on every page. `prefers-reduced-motion`: no intro (the title card), no parallax,
+routes shown complete, no page-transition animation.
 
 ## Credits
 
-Photographs from Wikimedia Commons, graded and cropped. Authors and licences are listed in the
-footer and in `tools/credits.json`. Contours come from Mapzen Terrain Tiles (AWS Open Data). Fonts are
-Newsreader and Schibsted Grotesk (SIL OFL).
+Photographs from Wikimedia Commons, graded and cropped; authors and licences in the footer and
+`tools/credits.json`. Terrain and contours from Mapzen Terrain Tiles on AWS Open Data. Fonts: Newsreader
+and Schibsted Grotesk (SIL OFL, licences in `assets/fonts/`).
