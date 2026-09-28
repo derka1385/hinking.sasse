@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Twin-peak marks for the Mountaineering Club.
+"""Twin-peak marks for the Hiking Club.
 Everything derives from three constants: one slope, one gap, one ground line.
 The viewBox is cropped to the artwork, with a uniform margin."""
 
@@ -43,7 +43,7 @@ def fitted(name, title, els, pts, pad=16, square=False):
     body = "".join(f"  {e}\n" for e in els)
     open(name, "w").write(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{f(x0)} {f(y0)} {f(w)} {f(h)}" '
-        f'role="img" aria-label="Mountaineering Club — {title}">\n'
+        f'role="img" aria-label="Hiking Club — {title}">\n'
         f'  <title>{title}</title>\n{body}</svg>\n')
 
 def fill(d, rule=""):
@@ -86,19 +86,20 @@ grp = (f'<g transform="translate({f(cx)} {f(vy)}) scale({scale}) translate({f(-c
 fitted("04-embleme.svg", "04 Embleme", [arc, grp],
        [(cx - r - sw / 2, ink_top), (cx + r + sw / 2, ink_bot)], pad=10, square=True)
 
-# 05 - horizontal lockup, built on mark 02
-FONT = "Helvetica Neue, Inter, Arial, sans-serif"
+# 05 - horizontal lockup, built on mark 02: mark | rule | HIKING over CLUB, as on the site
+FONT = "Futura, Avenir Next, Helvetica Neue, Inter, sans-serif"
 mx0, my0, mx1, my1 = min(xs), min(ys), max(xs), max(ys)
-MH = 96.0
+MH = 100.0
 sc = MH / (my1 - my0)
+mw = (mx1 - mx0) * sc
 mark = (f'<g transform="translate(0 0) scale({sc:.4f}) translate({f(-mx0)} {f(-my0)})">'
         f'{fill(poly(main) + " " + poly(faille), "evenodd")}{fill(poly(small))}</g>')
-tx = (mx1 - mx0) * sc + 38
-TW = 244.0   # width of the long line; CLUB keeps its own fitting or it falls apart at small sizes
-txt = (f'<text x="{f(tx)}" y="52" textLength="{f(TW)}" lengthAdjust="spacing" '
-       f'font-family="{FONT}" font-size="22" font-weight="400" fill="{INK}">MOUNTAINEERING</text>'
-       f'<text x="{f(tx)}" y="86" textLength="82" lengthAdjust="spacing" '
-       f'font-family="{FONT}" font-size="22" font-weight="400" fill="{INK}">CLUB</text>')
-fitted("05-lockup.svg", "05 Lockup", [mark, txt],
-       [(0, 0), ((mx1 - mx0) * sc, MH), (tx + TW, MH)], pad=14)
+rule = f'<rect x="{f(mw + 30)}" y="2" width="1.5" height="{f(MH - 4)}" fill="{INK}"/>'
+tx = mw + 58
+TW = 122.5   # HIKING at 29 px with 3.2 px tracking; CLUB is tracked out to the same width
+txt = "".join(f'<text x="{f(tx)}" y="{y}" textLength="{f(TW)}" lengthAdjust="spacing" '
+              f'font-family="{FONT}" font-size="29" font-weight="400" fill="{INK}">{w}</text>'
+              for w, y in [("HIKING", 42), ("CLUB", 85)])
+fitted("05-lockup.svg", "05 Lockup", [mark, rule, txt],
+       [(0, 0), (mw, MH), (tx + TW, MH)], pad=14)
 print("ok")

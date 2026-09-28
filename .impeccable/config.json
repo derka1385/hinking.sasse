@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "all-caps-body",
+        "value": "*",
+        "files": [
+          "site/index.html"
+        ],
+        "createdAt": "2026-09-28T15:32:20.310Z",
+        "reason": "model judgment: one-line metadata labels (coordinates, captions, Fig. 01 plate, footer line), 37–45 chars, in the brand system's uppercase label style; no body passages are uppercase"
+      },
+      {
+        "rule": "tight-leading",
+        "value": "*",
+        "files": [
+          "site/index.html"
+        ],
+        "createdAt": "2026-09-28T15:32:20.325Z",
+        "reason": "model judgment: the club lead is display-size serif (26–48px); 1.22 is display leading, body text uses 1.55"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "site/index.html"
+        ],
+        "createdAt": "2026-09-28T15:32:29.271Z",
+        "reason": "model judgment: every hit is a full-bleed stage/section (inset from absolute positioning and clamp() padding the static scan cannot resolve) or a hairline-divided editorial list whose rows are 84–120px tall with centred content; rendered screenshots confirm 20–104px margins"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "site/index.html"
+        ],
+        "createdAt": "2026-09-28T15:32:29.287Z",
+        "reason": "existing brand colour 'Snow' #F4F2EE from the club identity (tokens.css, brand boards), not a reflex choice"
+      },
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "site/assets/css/site.css"
+        ],
+        "createdAt": "2026-09-28T15:32:29.301Z",
+        "reason": "model judgment: the only hit is details::details-content height with interpolate-size, the standard disclosure animation; one element, on click only"
+      }
+    ]
+  }
+}

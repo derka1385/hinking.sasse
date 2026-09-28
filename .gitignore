@@ -6,3 +6,11 @@ preview.html
 v2/.png/
 
 .DS_Store
+
+# Site: full-resolution source photos (2–16 MB each); tools/credits.json says where they come from
+site/tools/raw/
+
+# Editor hook cache (the shared .impeccable/config.json stays tracked)
+.impeccable/hook.cache.json
+
+__pycache__/

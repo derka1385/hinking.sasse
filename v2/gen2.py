@@ -34,11 +34,14 @@ def write(name, w, h, els, bg=None):
     rect = f'  <rect width="{f(w)}" height="{f(h)}" fill="{bg}"/>\n' if bg else ""
     open(name, "w").write(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {f(w)} {f(h)}" width="{f(w)}" '
-        f'height="{f(h)}" role="img" aria-label="Mountaineering Club">\n{rect}'
+        f'height="{f(h)}" role="img" aria-label="Hiking Club">\n{rect}'
         + "".join(f"  {e}\n" for e in els) + '</svg>\n')
 
 # ---------- primary logo, vertical, SASSE structure ----------
-NAME_W = 340.0                       # width of the name line = reference for the whole system
+# HIKING CLUB is much shorter than the working title, so it is set larger (30 px, was 22) on a
+# narrower line (280, was 340); the tracking is whatever fills the line. Same as the site lockup.
+NAME_W = 280.0                       # width of the name line = reference for the whole system
+NAME_PX, CAP = 30.0, 0.761           # Futura Medium cap height = 0.761 em
 RULE_W = NAME_W * 0.59
 MARK_H = NAME_W * 0.55 / (MW / MH)
 PAD, CX = 26.0, NAME_W / 2 + 26.0
@@ -47,10 +50,11 @@ def principal(name, ink, bg=None):
     y = PAD
     m, _ = mark(MARK_H, CX, y, ink, None)
     y += MARK_H
+    base = y + 22 + 1.8 + 20 + NAME_PX * CAP        # 20 of air between the rule and the caps
     els = [m,
-           f'<rect x="{f(CX - RULE_W / 2)}" y="{f(y + 24)}" width="{f(RULE_W)}" height="1.8" fill="{ink}"/>',
-           line(CX, y + 62, NAME_W, 22, 400, "MOUNTAINEERING CLUB", ink)]
-    write(name, NAME_W + 2 * PAD, y + 62 + PAD, els, bg)
+           f'<rect x="{f(CX - RULE_W / 2)}" y="{f(y + 22)}" width="{f(RULE_W)}" height="1.8" fill="{ink}"/>',
+           line(CX, base, NAME_W, NAME_PX, 400, "HIKING CLUB", ink)]
+    write(name, NAME_W + 2 * PAD, base + PAD, els, bg)
 
 principal("logo.svg", INK)
 principal("logo-blanc.svg", "#F4F2EE", None)   # reversed version, for dark backgrounds
@@ -76,6 +80,6 @@ TILES = [
 for i, (name, bg, ink, tint, _) in enumerate(TILES):
     signed = i >= 4                       # two tiles carry the name, the others stay mark-only
     m, w = mark(210.0, S / 2, S * 0.20 if signed else S * 0.285, ink, tint)
-    els = [m] + ([line(S / 2, S * 0.735, 240, 16, 500, "MOUNTAINEERING", ink)] if signed else [])
+    els = [m] + ([line(S / 2, S * 0.735, 150, 16, 500, "HIKING CLUB", ink)] if signed else [])
     write(name, S, S, els, bg)
 print("logo + %d carres" % len(TILES))

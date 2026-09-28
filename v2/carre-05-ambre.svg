@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Mountaineering Club">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Hiking Club">
   <rect width="512" height="512" fill="#17130F"/>
   <g transform="translate(125.9 102.4) scale(1.52174) translate(-32 -30)"><path d="M134 30 L203 168 L129 168 L97 104 Z" fill="#F2EDE5"/><path d="M115 98 L137 98 L163 150 L141 150 Z" fill="#D98E3C"/><path d="M74 84 L116 168 L32 168 Z" fill="#F2EDE5"/></g>
-  <text x="136" y="376.3" textLength="240" lengthAdjust="spacing" font-family="Futura, Avenir Next, Helvetica Neue, Inter, sans-serif" font-size="16" font-weight="500" fill="#F2EDE5">MOUNTAINEERING</text>
+  <text x="181" y="376.3" textLength="150" lengthAdjust="spacing" font-family="Futura, Avenir Next, Helvetica Neue, Inter, sans-serif" font-size="16" font-weight="500" fill="#F2EDE5">HIKING CLUB</text>
 </svg>
