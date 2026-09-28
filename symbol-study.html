@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Hiking Club — Symbol Study</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{ --paper:#F4F2EE; --card:#FFFFFF; --ink:#111111; --mute:#8A8A85; --line:#E8E5DF; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font:400 15px/1.55 -apple-system,"Helvetica Neue",Inter,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased;padding:52px 48px 96px}
+  header{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin:0 0 34px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:1290px}
+  .card{background:var(--card);border-radius:10px;padding:46px 40px 34px;display:flex;flex-direction:column}
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:250px}
+  .stage img{height:170px;width:auto}
+  .card.wide{grid-column:1 / -1}
+  .card.wide .stage{min-height:190px}
+  .card.wide .stage img{height:104px}
+  h2{font-size:17px;font-weight:500;margin:26px 0 6px;letter-spacing:.005em}
+  p{margin:0;color:var(--mute);font-size:14px}
+  .scale{display:flex;align-items:flex-end;gap:22px;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+  .scale img{width:auto}
+  .scale .s1{height:40px} .scale .s2{height:22px} .scale .s3{height:14px}
+  .scale span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-left:auto}
+  @media(max-width:860px){body{padding:32px 20px 60px}.grid{grid-template-columns:1fr}}
+</style></head><body>
+<header>Hiking Club / Symbol study — v2</header>
+<div class="grid" id="g"></div>
+<script>
+const items=[
+ ["01-sommets-jumeaux.svg","01 / Twin peaks","Two solid masses, one constant gap. The twin summit, unadorned.",0],
+ ["02-faille.svg","02 / Cleft","The requested blend: offset masses from 03, open cleft from 01.",0],
+ ["03-arete.svg","03 / Ridge","The same geometry as a constant-width stroke, sharp joins.",0],
+ ["04-embleme.svg","04 / Emblem","Open ring, mark centred on the visible ink. Badge use.",0],
+ ["05-lockup.svg","05 / Horizontal lockup","Mark 02 plus the name on two lines, set to matching widths.",1]];
+document.getElementById('g').innerHTML=items.map(([f,t,d,wide])=>`
+ <div class="card${wide?' wide':''}">
+   <div class="stage"><img src="v2/${f}" alt="${t}"></div>
+   <h2>${t}</h2><p>${d}</p>
+   <div class="scale"><img class="s1" src="v2/${f}" alt=""><img class="s2" src="v2/${f}" alt=""><img class="s3" src="v2/${f}" alt=""><span>scaling test</span></div>
+ </div>`).join('');
+</script></body></html>
