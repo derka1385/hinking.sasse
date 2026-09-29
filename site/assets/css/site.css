@@ -141,7 +141,7 @@ html:has(#intro) { overflow-anchor: none; }   /* the intro removes its own scrol
 .nav-toggle { display: none; }
 
 /* ------------------------------------------------------------------ intro */
-.intro { position: relative; height: 600vh; background: var(--paper); }
+.intro { position: relative; height: 720vh; background: var(--paper); }
 .intro-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #06090d; color: rgba(244, 242, 238, .86); --p: 0; }
 .intro-stage.is-light { color: var(--ink); }
 .intro-stage.is-light .intro-cue i { background-color: rgba(29, 29, 27, .18); }
@@ -168,8 +168,8 @@ html:has(#intro) { overflow-anchor: none; }   /* the intro removes its own scrol
 html:not(.intro-complete) .intro-end-replay { visibility: hidden; }
 
 .intro-grain {
-  position: absolute; inset: -100%; pointer-events: none; background: url(../img/grain.png);
-  opacity: calc(.09 * clamp(0, (.97 - var(--p)) * 8, 1)); mix-blend-mode: overlay;
+  position: absolute; inset: -12%; pointer-events: none; background: url(../img/grain.png);
+  opacity: calc((.018 + .072 * clamp(0, (.2 - var(--p)) * 14.3, 1)) * clamp(0, (.97 - var(--p)) * 8, 1)); mix-blend-mode: overlay;
   animation: grain 1.2s steps(6) infinite;
 }
 @keyframes grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-7%, 4%); } 40% { transform: translate(5%, -9%); } 60% { transform: translate(-3%, 8%); } 80% { transform: translate(9%, 2%); } 100% { transform: translate(0, 0); } }
@@ -816,5 +816,5 @@ details[open]::details-content { height: auto; }
   .safety, .how, .board, .jf { grid-template-columns: 1fr; row-gap: 28px; }
   .hist li { grid-template-columns: 5em 3em 1fr; }
   .hist .label { grid-column: 1; } .hist-no { grid-column: 2; } .hist-name { grid-column: 3; } .hist .small { grid-column: 3; text-align: left; }
-  .intro { height: 500vh; }
+  .intro { height: 600vh; }
 }

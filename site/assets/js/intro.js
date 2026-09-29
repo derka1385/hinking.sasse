@@ -1,6 +1,6 @@
-// The ascent: a scroll-driven camera through fog, towards one climber on a north face.
-// Raw WebGL2, no library. One raymarched full-screen pass (terrain, rock, climber, fog, clouds)
-// and one instanced pass for snow. Scroll never gets hijacked: the camera only follows it, damped.
+// The ascent: fog, a Nordic forest, one continuous north face, a climber, then the page.
+// Raw WebGL2, no library. One raymarched full-screen pass (forest, terrain, rock, climber, fog,
+// clouds) and one instanced pass for snow. Scroll never gets hijacked: the camera follows it, damped.
 (() => {
 
 const section = document.getElementById('intro');
@@ -24,10 +24,7 @@ function markDone() {
   stage.style.setProperty('--p', '1');
   try { sessionStorage.setItem('hc-intro', 'seen'); } catch (e) { /* private mode: replays, harmless */ }
 }
-if (!play || reduced) {
-  markDone();
-  if (!play) return;
-}
+if (!play || reduced) { markDone(); return; }   // reduced motion: straight to the title card, no GL
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 scrollTo(0, 0);
 
@@ -45,32 +42,48 @@ const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const smooth = (t) => t * t * (3 - 2 * t);
 
 // ---------------------------------------------------------------- the world (metres, y up)
-// The face is a plane through the summit, 66° steep, facing the camera; a snow couloir cuts it at
-// the 2:1 slope of the club's mark — the cleft — and the climber stands in it.
+// The face is a plane through the summit, 66° steep, facing the valley, displaced into ribs and
+// ledges. The climber stands on an ice field in it; the forest fills the valley floor far in front.
 const SUMMIT = [80, 1150, -320];
 const NF = V.norm([0, 0.45, 1]);          // face normal
 const TX = [1, 0, 0];                     // across the face
 const TY = V.cross(NF, TX);               // up the face
-const DEPTH = 8;                          // couloir floor below the face plane
-const CU = -20, CV = -640;                // climber, in face coordinates
-const CLIMBER = V.add(V.add(SUMMIT, V.add(V.mul(TX, CU), V.mul(TY, CV))), V.mul(NF, -DEPTH));
+const CU = -20, CV = -640;                // climber, in face coordinates: on an ice field in the face
+const CLIMBER = V.add(SUMMIT, V.add(V.mul(TX, CU), V.mul(TY, CV)));
+// The trail through the forest, and the ground along it, are analytic so the camera can walk them
+// (the shader uses the same two functions).
+const trailX = (z) => 45 * Math.sin((z - 5200) / 380) + 18 * Math.sin(z / 157);
+const groundAt = (x, z) => -0.075 * Math.max(z - 250, 0) + 2.5 * Math.sin(x / 37 + 1.3) * Math.sin(z / 53) + 1.8 * Math.sin(z / 91 + x / 140);
+const trail = (z, up) => { const x = trailX(z); return [x, groundAt(x, z) + up, z]; };
 const at = (n, x, y, up = 0) => V.add(V.add(V.add(CLIMBER, V.mul(NF, n)), V.add(V.mul(TX, x), V.mul(TY, y))), [0, up, 0]);
 const LOOK = V.add(CLIMBER, [0, 1.1, 0]);
 
 // Camera keys: progress, position, target, vertical fov (deg).
-// The climber is there for scale: we find them, travel along the wall beside them, and never close in.
+// Down through the cloud into the forest, along the trail to the treeline, a slow crane up to the
+// wall, then the climber — small, seen from beside the face, never closer — and into the cloud.
+const walk = [];
+for (let k = 0; k <= 9; k++) {                        // the trail, one key every ~170 m
+  const z = 5640 - k * 172;
+  walk.push([0.19 + k * 0.0255, trail(z, 2.3 + k * 0.05), trail(z - 70, 1.9 + k * 0.1), 50]);
+}
 const KEYS = [
   [0.00, [-150, 430, 5900], [40, 660, 0], 40],
-  [0.15, [-120, 440, 4500], [40, 650, 0], 40],
-  [0.31, [-70, 455, 3100], [40, 630, 0], 38],
-  [0.47, [0, 480, 1800], [45, 610, -60], 36],
-  [0.62, at(620, -10, -120), LOOK, 30],
-  [0.72, at(300, 30, -70), LOOK, 28],
-  [0.79, at(140, 45, -30), at(0, 0, 2, 1.2), 26],
-  [0.85, at(128, -10, -8), at(0, -8, 4, 1), 26],
-  [0.90, at(122, -62, 14), at(0, -16, 12, 1), 27],
-  [0.95, at(150, -100, 50), at(40, -140, 220), 31],
-  [1.00, at(175, -125, 95), at(60, -170, 330), 33],
+  [0.06, [-135, 250, 5870], [0, 280, 2400], 41],
+  [0.11, [-110, 30, 5810], trail(5300, 30), 44],
+  [0.155, trail(5715, 36), trail(5480, 10), 47],
+  ...walk,
+  [0.455, trail(3860, 4.5), [40, 520, 0], 44],
+  [0.50, trail(3620, 26), [40, 580, 0], 40],
+  [0.545, [-20, -110, 3150], [40, 620, 0], 38],
+  [0.59, [0, 170, 2500], [45, 620, -60], 36],
+  [0.635, [0, 470, 1820], [45, 600, -60], 34],
+  [0.68, at(620, -10, -120), LOOK, 30],
+  [0.74, at(320, 30, -70), LOOK, 28],
+  [0.80, at(150, 45, -30), at(0, 0, 2, 1.2), 26],
+  [0.855, at(138, -10, -8), at(0, -8, 4, 1), 26],
+  [0.905, at(132, -62, 14), at(0, -16, 12, 1), 27],
+  [0.955, at(160, -100, 50), at(40, -140, 220), 31],
+  [1.00, at(185, -125, 95), at(60, -170, 330), 33],
 ];
 
 // Atmosphere keys: progress, fog colour (linear), fog density, cloud bank, sun colour, exposure, sun direction.
@@ -78,15 +91,19 @@ const KEYS = [
 // luminance rises, and the fog itself becomes the paper of the page.
 const LOOKS = [
   [0.00, [0.0035, 0.0085, 0.019], 0.00028, 0.12, [0.30, 0.34, 0.46], 1.0, [0.30, 0.12, -1.0]],
-  [0.10, [0.0080, 0.0140, 0.026], 0.00060, 1.00, [0.20, 0.21, 0.24], 1.0, [0.40, 0.16, -0.9]],
-  [0.22, [0.030, 0.040, 0.055], 0.00050, 0.90, [0.45, 0.43, 0.42], 1.0, [0.60, 0.22, -0.7]],
-  [0.34, [0.070, 0.082, 0.100], 0.00024, 0.25, [1.20, 1.10, 1.00], 1.0, [0.78, 0.30, -0.45]],
-  [0.50, [0.110, 0.125, 0.145], 0.00013, 0.06, [2.20, 2.05, 1.85], 1.0, [0.82, 0.40, -0.05]],
-  [0.70, [0.150, 0.165, 0.185], 0.00012, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
-  [0.87, [0.230, 0.245, 0.262], 0.00026, 0.55, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
-  [0.905, [0.400, 0.415, 0.430], 0.00110, 1.40, [2.60, 2.45, 2.30], 1.0, [0.80, 0.42, 0.05]],
-  [0.94, [0.660, 0.668, 0.668], 0.00500, 2.40, [2.80, 2.70, 2.55], 1.04, [0.80, 0.42, 0.05]],
-  [0.97, [0.960, 0.950, 0.915], 0.02500, 3.20, [3.00, 2.90, 2.75], 1.08, [0.80, 0.42, 0.05]],
+  [0.07, [0.0070, 0.0125, 0.024], 0.00050, 1.00, [0.20, 0.21, 0.24], 1.0, [0.34, 0.13, -0.95]],
+  [0.13, [0.0180, 0.0250, 0.034], 0.00070, 0.80, [0.35, 0.36, 0.40], 1.0, [0.36, 0.14, -0.92]],
+  [0.20, [0.0340, 0.0440, 0.052], 0.00075, 0.38, [0.70, 0.66, 0.62], 1.0, [0.40, 0.16, -0.90]],
+  [0.30, [0.0600, 0.0720, 0.080], 0.00070, 0.30, [1.10, 1.00, 0.88], 1.0, [0.46, 0.18, -0.87]],
+  [0.40, [0.0950, 0.1080, 0.120], 0.00045, 0.22, [1.50, 1.36, 1.18], 1.0, [0.55, 0.22, -0.80]],
+  [0.43, [0.1100, 0.1250, 0.140], 0.00026, 0.16, [1.70, 1.55, 1.35], 1.0, [0.62, 0.26, -0.68]],
+  [0.46, [0.1250, 0.1400, 0.158], 0.00020, 0.14, [1.90, 1.75, 1.55], 1.0, [0.68, 0.30, -0.55]],
+  [0.56, [0.1150, 0.1300, 0.150], 0.00015, 0.06, [2.25, 2.10, 1.90], 1.0, [0.80, 0.40, -0.10]],
+  [0.72, [0.1500, 0.1650, 0.185], 0.00012, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
+  [0.87, [0.2300, 0.2450, 0.262], 0.00026, 0.55, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
+  [0.91, [0.4000, 0.4150, 0.430], 0.00110, 1.40, [2.60, 2.45, 2.30], 1.0, [0.80, 0.42, 0.05]],
+  [0.945, [0.660, 0.668, 0.668], 0.00500, 2.40, [2.80, 2.70, 2.55], 1.04, [0.80, 0.42, 0.05]],
+  [0.972, [0.960, 0.950, 0.915], 0.02500, 3.20, [3.00, 2.90, 2.75], 1.08, [0.80, 0.42, 0.05]],
   [1.00, [1.160, 1.135, 1.080], 0.09000, 3.60, [3.00, 2.90, 2.75], 1.10, [0.80, 0.42, 0.05]],
 ];
 
@@ -112,6 +129,7 @@ function camera(p, time) {
   const fov = k(i)[3] + (k(i + 1)[3] - k(i)[3]) * smooth(t);
   const out = V.dot(V.sub(pos, CLIMBER), NF);
   if (out < 2.5 && p > 0.7) pos.splice(0, 3, ...V.add(pos, V.mul(NF, 2.5 - out)));
+  if (p < 0.56) pos[1] = Math.max(pos[1], groundAt(pos[0], pos[2]) + (pos[2] > 3900 ? 1.7 : 6.5));   // never below the ground
   // handheld drift, proportional to how far we are from the climber: steady up close
   const dist = Math.hypot(...V.sub(pos, CLIMBER));
   const a = Math.min(dist * 0.004, 6) + 0.02;
@@ -159,9 +177,10 @@ uniform sampler3D uNoise;
 uniform vec2 uRes; uniform float uTime, uFocal, uPix;
 uniform vec3 uCam, uCamR, uCamU, uCamF;
 uniform vec3 uSunDir, uSunCol, uFogCol;
-uniform float uFogDen, uCloud, uWhite, uTMax, uExposure, uVig;
+uniform float uFogDen, uCloud, uWhite, uTMax, uExposure, uVig, uLayer;
 uniform vec3 uPaper;
 uniform int uSteps, uCloudSteps, uQuality;
+uniform float uTreeCell;
 out vec4 outColor;
 
 const vec3 S1 = ${f3(SUMMIT)};
@@ -169,8 +188,6 @@ const vec3 NF = ${f3(NF)};
 const vec3 TY = ${f3(TY)};
 const vec3 CLIMB = ${f3(CLIMBER)};
 const vec2 CUV = vec2(${CU.toFixed(1)}, ${CV.toFixed(1)});
-const vec2 CDIR = vec2(-0.4472136, 0.8944272);   // up the couloir: 2:1, the slope of the mark
-const float DEPTH = ${DEPTH.toFixed(1)};
 const mat3 ROT = mat3(0.00, 0.80, 0.60, -0.80, 0.36, -0.48, -0.60, -0.48, 0.64);
 
 float n3(vec3 p){ return textureLod(uNoise, p * 0.0625, 0.0).r; }
@@ -187,15 +204,10 @@ float smin(float a, float b, float k){ float h = max(k - abs(a - b), 0.0) / k; r
 // ---- the face, in its own coordinates: u across, v up the face, w out of it (metres)
 vec3 faceUVW(vec3 p){ vec3 q = p - S1; return vec3(q.x, dot(q, TY), dot(q, NF)); }
 
-// the couloir: signed distance across it, rough walls, a meandering line at the 2:1 slope
-float couloirAcross(vec3 p, vec3 f, out float along){
-  vec2 uv = f.xy - CUV;
-  along = dot(uv, CDIR);
-  float across = uv.x * CDIR.y - uv.y * CDIR.x;
-  across += 16.0 * (n3(vec3(along / 150.0, 1.7, 0.3)) - 0.5) * smoothstep(40.0, 140.0, abs(along));  // meander, straight near the climber
-  float ends = smoothstep(-340.0, -250.0, along) * (1.0 - smoothstep(420.0, 540.0, along));
-  float w = mix(-30.0, 15.0 + 11.0 * n3(vec3(along / 70.0, 4.1, 2.2)) * smoothstep(30.0, 120.0, abs(along)), ends);
-  return abs(across) - w;
+// the ice field the climber is on: a soft, irregular patch of snow in the face, 0 at its heart
+float iceField(vec3 p, vec3 f){
+  float k = length((f.xy - CUV) / vec2(70.0, 170.0));
+  return k + (0.55 + 0.7 * smoothstep(0.4, 1.4, k)) * (n3(p / 110.0) - 0.5) + 0.25 * (n3(p / 29.0) - 0.5);   // ragged edge: no oval from afar
 }
 
 // ---- rock: ridged multifractal stretched along the fall line (flutings, ribs, gullies),
@@ -229,39 +241,40 @@ float pyramid(vec3 p, vec3 s, vec3 nf, vec3 nl, vec3 nr, vec3 nb){
 
 float gullyOut; // set by massif(), read by shade()
 float massif(vec3 p, float lod){
+  // far away (the forest is 4 km out) the bare planes are a safe bound: warp + rock stay under 330 m
+  float d0 = smin(smin(pyramid(p, S1, NF, normalize(vec3(-0.66, 0.62, 0.3)), normalize(vec3(0.97, 0.28, 0.2)), normalize(vec3(0.05, 0.5, -1.0))),
+                       pyramid(p, vec3(-640.0, 880.0, -300.0), normalize(vec3(0.1, 0.7, 1.0)), normalize(vec3(-0.55, 0.9, 0.2)), normalize(vec3(0.7, 0.75, 0.2)), normalize(vec3(0.0, 0.7, -1.0))), 250.0),
+                  pyramid(p, vec3(840.0, 690.0, -640.0), normalize(vec3(-0.15, 0.75, 1.0)), normalize(vec3(-0.8, 0.8, 0.1)), normalize(vec3(0.9, 0.7, 0.2)), normalize(vec3(0.0, 0.6, -1.0))), 280.0);
+  if (d0 > 600.0) return (d0 - 520.0) * 0.8;
   vec3 f = faceUVW(p);
-  float along, cw = couloirAcross(p, f, along);
-  float calm = smoothstep(15.0, 260.0, cw);                                         // the gully sits in a quiet hollow
-  vec3 wp = p + (vec3(n3(p / 700.0 + 2.0), 0.0, n3(p / 700.0 + 6.0)) - 0.5) * 110.0 * mix(0.15, 1.0, calm);  // no straight edges
-  float a = pyramid(wp, S1, NF, normalize(vec3(-0.72, 0.58, 0.3)), normalize(vec3(0.96, 0.3, 0.2)), normalize(vec3(0.05, 0.5, -1.0)));
-  float b = pyramid(wp, vec3(-860.0, 720.0, -380.0), normalize(vec3(0.12, 0.85, 1.0)), normalize(vec3(-0.6, 0.95, 0.15)), normalize(vec3(0.75, 0.7, 0.25)), normalize(vec3(0.0, 0.7, -1.0)));
-  float c = pyramid(wp, vec3(960.0, 640.0, -820.0), normalize(vec3(-0.15, 0.75, 1.0)), normalize(vec3(-0.8, 0.8, 0.1)), normalize(vec3(0.9, 0.75, 0.2)), normalize(vec3(0.0, 0.6, -1.0)));
-  float d = smin(smin(a, b, 140.0), c, 160.0);
+  float calm = smoothstep(0.35, 2.0, iceField(p, f));                              // the face is quiet around the climber
+  // the ice field is not smooth: runnels down the fall line and wind crust, levelled (not dug out) at the climber's feet
+  float feet = smoothstep(1.5, 5.0, length(f.xy - CUV));
+  float core = 1.0 - smoothstep(0.3, 0.85, iceField(p, f));
+  float runnel = core * (1.0 - smoothstep(180.0, 450.0, lod))
+               * feet * (2.0 * pow(1.0 - abs(2.0 * n3(vec3(f.x / 7.0, f.y / 60.0, 3.3)) - 1.0), 2.0) + 0.45 * n3(p / 3.0) - 0.95);   // zero-mean, so no pit   // flutes along the face's own fall line
+  // one mass: a horn, a long west shoulder rising into it, a lower east ridge set back; no notches between
+  vec3 w1 = (vec3(n3(p / 900.0 + 2.0), 0.0, n3(p / 900.0 + 6.0)) - 0.5) * 130.0;
+  vec3 w2 = (vec3(n3(p / 420.0 + 4.0), 0.0, n3(p / 420.0 + 8.0)) - 0.5) * 18.0;   // gentle: a steep warp bends the distance field and rays overshoot
+  vec3 wp = p + (w1 + w2) * calm;
+  float a = pyramid(wp, S1, NF, normalize(vec3(-0.66, 0.62, 0.3)), normalize(vec3(0.97, 0.28, 0.2)), normalize(vec3(0.05, 0.5, -1.0)));
+  float b = pyramid(wp, vec3(-640.0, 880.0, -300.0), normalize(vec3(0.1, 0.7, 1.0)), normalize(vec3(-0.55, 0.9, 0.2)), normalize(vec3(0.7, 0.75, 0.2)), normalize(vec3(0.0, 0.7, -1.0)));
+  float c = pyramid(wp, vec3(840.0, 690.0, -640.0), normalize(vec3(-0.15, 0.75, 1.0)), normalize(vec3(-0.8, 0.8, 0.1)), normalize(vec3(0.9, 0.7, 0.2)), normalize(vec3(0.0, 0.6, -1.0)));
+  float d = smin(smin(a, b, 250.0), c, 280.0);
   if (d > 200.0) return (d - 185.0) * 0.8;                                        // far from rock: cheap bound
-  float near = mix(0.15, 1.0, calm);
-  // from far away the gully is a snow-filled hollow in the rock; it is only carved once we are close
-  float carveAmt = 1.0 - smoothstep(900.0, 1400.0, lod);
-  if (carveAmt <= 0.0) return (d - rock(p, lod, near, gullyOut)) * 0.8;
-  // rough gully walls, band-limited: noise finer than a pixel only makes rays stop in mid-air
-  float wall = cw < 12.0 ? cw - 3.5 * n3(p / 7.0) * (1.0 - smoothstep(1200.0, 2600.0, lod)) - 1.6 * n3(p / 2.6) * (1.0 - smoothstep(300.0, 800.0, lod)) : cw - 5.1;
-  float floorD = f.z + DEPTH;
-  float carve = -max(wall, -floorD);
-  // exact: rock() >= 0, so when d < carve the carve wins whatever the rock does
-  bool buried = wall < -1.0 && d < carve && carveAmt >= 1.0;
-  float raw = buried ? carve : d - rock(p, lod, near, gullyOut);
-  float rk = buried ? carve : max(raw, carve);
-  float snow = wall - 1.0;
-  if (wall < 2.0){
-    float fine = 1.0 - smoothstep(60.0, 260.0, lod);                  // sub-pixel beyond that: it would only sparkle
-    float ripples = fine * (0.12 * n3(p * vec3(1.0 / 0.6, 1.0 / 5.0, 1.0 / 0.6)) + 0.06 * n3(p / 0.45)) + 0.12 * n3(p / 4.0) + 0.35 * n3(p / 23.0);
-    snow = max(max(floorD - ripples, snow), d + 4.0);
-  }
-  float res = min(rk, snow);
-  return (carveAmt < 1.0 ? mix(raw, res, carveAmt) : res) * 0.8;
+  float fine = 1.0 - smoothstep(60.0, 260.0, lod);
+  float snow = (1.0 - calm) * (0.18 * n3(p / 4.0) + 0.3 * n3(p / 23.0) + fine * 0.06 * n3(p / 0.5));
+  // where the relief fades in, the field is steeper than a distance: shorten the step there
+  return (d - rock(p, lod, calm, gullyOut) - snow - runnel) * 0.8 / (1.0 + 4.0 * calm * (1.0 - calm));
 }
 
+float trailX(float z){ return 45.0 * sin((z - 5200.0) / 380.0) + 18.0 * sin(z / 157.0); }
+float groundA(vec2 xz){ return -0.075 * max(xz.y - 250.0, 0.0) + 2.5 * sin(xz.x / 37.0 + 1.3) * sin(xz.y / 53.0) + 1.8 * sin(xz.y / 91.0 + xz.x / 140.0); }
+float forestAmt(float z){ return smoothstep(3880.0, 4600.0, z) * (1.0 - smoothstep(6500.0, 6800.0, z)); }
+float trailMask(vec2 xz){ return 1.0 - smoothstep(1.2, 3.2, abs(xz.x - trailX(xz.y))); }
+
 float ground(vec2 xz, float lod){
-  float h = -0.075 * max(xz.y - 250.0, 0.0);
+  float h = groundA(xz);
   float side = max(abs(xz.x - 60.0) - 1000.0, 0.0);
   float far = 1.0 - smoothstep(-2000.0, -600.0, xz.y);
   vec3 q = vec3(xz.x, 11.0, xz.y) / 1700.0; q += (vec3(n3(q * 0.7), 0.0, n3(q * 0.7 + 4.0)) - 0.5) * 0.8;
@@ -271,8 +284,80 @@ float ground(vec2 xz, float lod){
     rg /= 1.9;
     h += smoothstep(0.0, 1600.0, side) * (380.0 + 820.0 * rg * rg) + far * (300.0 + 900.0 * rg * rg);
   }
-  h += 24.0 * n3(vec3(xz.x, 3.0, xz.y) / 230.0) + 6.0 * n3(vec3(xz.x, 5.0, xz.y) / 41.0);
+  float fa = forestAmt(xz.y), tm = fa * (1.0 - smoothstep(5.0, 22.0, abs(xz.x - trailX(xz.y))));
+  // the valley's lumps flatten in the forest and vanish along the trail, where the camera walks
+  h += (24.0 * n3(vec3(xz.x, 3.0, xz.y) / 230.0) + 6.0 * n3(vec3(xz.x, 5.0, xz.y) / 41.0)) * (1.0 - 0.85 * smoothstep(1100.0, 2900.0, xz.y)) * (1.0 - tm);
+  if (fa > 0.0 && lod < 90.0) h += fa * (0.22 * n3(vec3(xz.x, 7.0, xz.y) / 2.6) + 0.1 * n3(vec3(xz.x, 9.0, xz.y) / 1.1)) * (1.0 - 0.7 * trailMask(xz)) * (1.0 - lod / 90.0);  // moss, roots, stones
   return h;
+}
+
+// ---- the forest: Norway spruce, Scots pine and a few birches, one per cell, never crossing its walls;
+// empty cells may hold a boulder left by the ice. Everything is built from the cell's own hash.
+vec4 hash42(vec2 p){ vec4 p4 = fract(vec4(p.xyxy) * vec4(0.1031, 0.1030, 0.0973, 0.1099)); p4 += dot(p4, p4.wzxy + 33.33); return fract((p4.xxyz + p4.yzzw) * p4.zywx); }
+bool gBound = true;      // off for normals, shadows and AO: cell walls are a step limit, never a surface
+vec3 gRd = vec3(0.0, 0.0, -1.0);   // the primary ray, so a step can go straight to where it leaves the cell
+float sdEll(vec3 q, vec3 r){ float k0 = length(q / r), k1 = length(q / (r * r)); return k0 * (k0 - 1.0) / k1; }
+vec2 trees(vec3 p, float lod){
+  float fa = forestAmt(p.z);
+  if (fa <= 0.0) return vec2(1e5, 0.0);
+  float gA = groundA(p.xz);
+  if (p.y - gA > 31.0) return vec2(p.y - gA - 29.0, -1.0);                      // above the canopy
+  float cs = uTreeCell;
+  vec2 id = floor(p.xz / cs), local = p.xz - (id + 0.5) * cs;
+  float dCell = 1e5;
+  if (gBound){                                                                     // grid traversal: where does the ray leave this cell?
+    vec2 lo = id * cs, hi = lo + cs, rd = gRd.xz;
+    float tx = abs(rd.x) > 1e-4 ? ((rd.x > 0.0 ? hi.x : lo.x) - p.x) / rd.x : 1e5;
+    float tz = abs(rd.y) > 1e-4 ? ((rd.y > 0.0 ? hi.y : lo.y) - p.z) / rd.y : 1e5;
+    dCell = max(min(tx, tz), 0.0) + 0.05;
+  }
+  vec4 h = hash42(id), g = hash42(id + 71.3);
+  vec2 c = (id + 0.5 + (h.xy - 0.5) * 0.22) * cs;
+  float det = clamp(1.0 - lod / 110.0, 0.0, 1.0);
+  float dens = fa * smoothstep(8.5, 11.5, abs(c.x - trailX(c.y)));
+  vec3 q = vec3(p.x - c.x, p.y - groundA(c), p.z - c.y);
+  if (h.z > dens * 0.9){
+    // a glacial boulder, half buried, moss on top
+    if (g.x > 0.3 * fa || abs(c.x - trailX(c.y)) < 5.0) return vec2(dCell, -1.0);
+    float R = 0.8 + 1.4 * g.y;
+    float bd = sdEll(q - vec3(0.0, R * 0.1, 0.0), vec3(R * 1.3, R * 0.8, R)) + det * 0.12 * (n3(q * 1.8 + g.xyz * 20.0) - 0.5);
+    return bd < dCell ? vec2(bd, 12.0) : vec2(dCell, -1.0);
+  }
+  float edge = smoothstep(3880.0, 4750.0, c.y);                                  // stunted towards the treeline
+  float kind = g.x < 0.9 ? 0.3 : 0.95;                                            // spruce, and now and then a birch
+  float H = (kind < 0.55 ? 17.0 + 11.0 * h.w : 12.0 + 6.0 * h.w) * mix(0.4, 1.0, edge);
+  vec2 lean = (g.zw - 0.5) * 0.06;
+  q.xz -= lean * q.y * q.y / H;                                                  // a gentle, curved lean
+  float s = clamp(q.y / H, 0.0, 1.0);
+  float tr = mix(0.25, 0.06, s) * (kind < 0.55 ? 0.9 : kind < 0.85 ? 1.05 : 0.62);
+  float trunk = max(max(length(q.xz) - tr, -3.0 - q.y), q.y - H * (kind < 0.55 ? 0.98 : 0.9));
+  trunk -= det * 0.018 * n3(q * vec3(4.0, 0.5, 4.0) + g.xyz * 9.0);
+  float crown;
+  if (kind < 0.55){
+    // Norway spruce: a narrow spire of drooping whorls, each branch mass a little different
+    float y0 = H * mix(0.08, 0.28 + 0.26 * g.y, edge), R = H * (0.1 + 0.035 * g.z);   // bare below in the old forest
+    float sc = clamp((q.y - y0) / (H - y0), 0.0, 1.0);
+    float tier = fract((H - q.y) / (1.1 + 0.4 * g.w) + h.x * 7.0);
+    float ang = atan(q.z, q.x);
+    float lobes = 0.72 + 0.45 * n3(vec3(ang * 2.6, q.y * 0.7, g.y * 60.0));
+    float r = min(R * pow(1.0 - sc, 0.85) * (0.8 + 0.2 * tier * tier) * lobes, 3.5);
+    crown = max(max((length(q.xz) - r) * 0.62, y0 - q.y - 1.6 * n3(q * vec3(0.7, 0.3, 0.7) + g.xyz * 17.0)), q.y - H);   // the lowest branches hang raggedly
+    crown += 0.3 * (n3(q * 1.4 + g.xyz * 40.0) - 0.5) + det * 0.12 * (n3(q * 3.6 + g.zyx * 40.0) - 0.5);
+  } else if (kind < 0.85){
+    // Scots pine: a bare trunk, then a flat crown of clumps
+    float ra = g.y * 6.283, sz = mix(0.7, 1.0, edge);
+    vec3 cq = q - vec3(0.0, H * 0.82, 0.0);
+    float c1 = sdEll(cq - vec3(cos(ra) * 1.2, 0.0, sin(ra) * 1.2) * sz, vec3(1.9, 0.6, 1.7) * sz);
+    float c2 = sdEll(cq - vec3(cos(ra + 2.3) * 1.5, H * 0.06, sin(ra + 2.3) * 1.5) * sz, vec3(1.5, 0.55, 1.4) * sz);
+    float c3 = sdEll(cq - vec3(cos(ra + 4.4) * 1.0, -H * 0.07, sin(ra + 4.4) * 1.0) * sz, vec3(1.3, 0.5, 1.4) * sz);
+    crown = smin(smin(c1, c2, 0.6), c3, 0.6) * 0.8;
+    crown += 0.45 * (n3(q * 1.2 + g.xyz * 30.0) - 0.5) + det * (0.2 * (n3(q * 3.4 + g.zxy * 30.0) - 0.5) + 0.1 * (n3(q * 8.0 + g.yzx * 30.0) - 0.5));
+  } else {
+    crown = 1e5;                                                                  // birch, bare for the season: the white stem is enough
+  }
+  float trunkMat = kind < 0.55 ? 6.0 : kind < 0.85 ? 8.0 : 10.0, crownMat = kind < 0.55 ? 7.0 : kind < 0.85 ? 9.0 : 11.0;
+  vec2 r = trunk < crown ? vec2(trunk, trunkMat) : vec2(crown, crownMat);
+  return r.x < dCell ? r : vec2(dCell, -1.0);
 }
 
 // ---- the climber, in local coordinates: x across, y up, z into the wall. Metres.
@@ -319,8 +404,8 @@ vec2 climber(vec3 q){
   return r;
 }
 
-// the rope, from the harness down the couloir to an anchor out of sight
-const vec3 DOWN = normalize(vec3(0.4472136, 0.0, 0.0) - 0.8944272 * TY);
+// the rope, from the harness down the ice field to an anchor out of sight
+const vec3 DOWN = normalize(vec3(0.12, 0.0, 0.0) - TY);
 float rope(vec3 p, float lod){
   vec3 h = CLIMB + vec3(0.0, 0.95, 0.16);
   vec3 a = CLIMB + DOWN * 1.1 + NF * 0.42, b = CLIMB + DOWN * 5.0 + NF * 0.07, c = CLIMB + DOWN * 48.0 + NF * 0.07;
@@ -330,6 +415,7 @@ float rope(vec3 p, float lod){
 
 vec2 map(vec3 p, float lod){
   vec2 r = vec2(smin(massif(p, lod), (p.y - ground(p.xz, lod)) * 0.55, 45.0), 0.0);
+  if (p.z > 3700.0){ vec2 tr = trees(p, lod); if (tr.x < r.x) r = tr; }
   vec3 q = p - CLIMB;
   float inflate = 0.75 * uPix * lod;                    // never thinner than a pixel: no shimmering speck
   float bound = length(q - vec3(0.0, 1.0, 0.0)) - 1.6;
@@ -344,6 +430,7 @@ vec3 normal(vec3 p, float t){
 }
 
 float shadow(vec3 ro, vec3 rd, float lod){
+  gBound = false;
   float res = 1.0, t = 0.05 + lod * 0.002;
   for (int i = 0; i < 22; i++){
     float h = map(ro + rd*t, lod * 4.0 + t * 3.0).x;
@@ -351,6 +438,7 @@ float shadow(vec3 ro, vec3 rd, float lod){
     t += clamp(h, 0.03 + t * 0.03, 120.0);
     if (res < 0.01 || t > 500.0) break;
   }
+  gBound = true;
   return clamp(res, 0.0, 1.0);
 }
 
@@ -370,26 +458,56 @@ vec3 fogColor(vec3 rd){
 float fogAmount(vec3 ro, vec3 rd, float t){
   float b = 1.0 / 420.0, base = 380.0;
   float k = abs(rd.y) < 1e-4 ? t : (1.0 - exp(-t * rd.y * b)) / (rd.y * b);
-  return 1.0 - exp(-uFogDen * (0.55 * t + 1.6 * exp(-(ro.y - base) * b) * k));
+  return 1.0 - exp(-uFogDen * (0.55 * t + uLayer * exp(-(ro.y - base) * b) * k));
 }
 
 vec3 shade(vec3 p, vec3 rd, float t, float mat){
+  gBound = false;
   vec3 n = normal(p, t);
   vec3 alb; float spec = 0.0, snowAmt = 0.0;
-  if (mat < 0.5){
+  float gA = groundA(p.xz), fa = forestAmt(p.z) * (1.0 - smoothstep(4.0, 40.0, p.y - gA));
+  if (mat < 0.5 && fa > 0.01){
+    // forest floor: moss and needles, snow lying in patches, the trail trodden pale
+    float w = n3(p / 3.0), v = n3(p / 17.0), tm = trailMask(p.xz);
+    vec3 floor_ = mix(vec3(0.022, 0.026, 0.015), vec3(0.048, 0.056, 0.026), w) * (0.75 + 0.5 * v);
+    floor_ = mix(floor_, vec3(0.055, 0.045, 0.035), smoothstep(0.55, 0.75, n3(p / 1.1)) * 0.6);   // needles, brown
+    float snow = smoothstep(0.64, 0.74, v * 0.7 + w * 0.3 + 0.1 * n.y) * (1.0 - tm);
+    floor_ = mix(floor_, vec3(0.58, 0.62, 0.68), snow * 0.8);
+    floor_ = mix(floor_, vec3(0.075, 0.068, 0.06), tm * 0.8);                                    // the trail, trodden earth
+    float sn2 = smoothstep(0.56, 0.72, n.y + 0.28 * (w - 0.5));
+    vec3 open_ = mix(vec3(0.050, 0.052, 0.057) * (0.6 + 0.8 * v), vec3(0.76, 0.80, 0.87), max(sn2, smoothstep(0.2, 0.5, n.y)));
+    alb = mix(open_, floor_, fa);
+    snowAmt = snow * fa;
+  } else if (mat < 0.5){
     vec3 f = faceUVW(p);
-    float along, cw = couloirAcross(p, f, along);
     float gully; rock(p, t, 1.0, gully);
     float v = n3(p / 23.0), w = n3(p / 5.0), fine = n3(p / 1.3);
     vec3 rk = vec3(0.050, 0.052, 0.057) * (0.6 + 0.8 * v) * mix(vec3(1.0), vec3(1.1, 1.0, 0.9), n3(p / 170.0));
     rk = mix(rk, vec3(0.5, 0.53, 0.58), 0.35 * smoothstep(0.35, 0.65, n.y + 0.4 * (fine - 0.5)));   // dusting
     float snow = smoothstep(0.56, 0.72, n.y + 0.28 * (w - 0.5) + 0.1 * (v - 0.5));                 // ledges
     snow = max(snow, smoothstep(0.62, 0.86, gully + 0.25 * (w - 0.5)) * smoothstep(0.18, 0.4, n.y)); // gullies
-    float onFloor = max(1.0 - smoothstep(-DEPTH + 0.8, -DEPTH + 3.5, f.z), smoothstep(900.0, 1400.0, t));
-    snow = max(snow, (1.0 - smoothstep(0.0, 1.8, cw - 2.5 * w)) * onFloor);  // the couloir
+    snow = max(snow, (1.0 - smoothstep(0.55, 1.05, iceField(p, f))) * smoothstep(0.08, 0.4, n.y + 0.3 * (w - 0.5)));   // the ice field, rock showing where steep
     snow = max(snow, (1.0 - smoothstep(0.0, 60.0, p.y - ground(p.xz, t))) * smoothstep(0.2, 0.5, n.y) * (1.0 - smoothstep(120.0, 260.0, p.y)));
     alb = mix(rk, vec3(0.76, 0.80, 0.87) * (0.88 + 0.16 * w), snow);
     spec = snow * 0.03; snowAmt = snow;
+  } else if (mat > 5.5){                                  // the forest
+    float hy = p.y - gA, w = n3(p * vec3(1.6, 0.25, 1.6));
+    if (mat > 11.5){                                      // boulder: grey granite, moss on the top
+      alb = mix(vec3(0.07, 0.07, 0.072) * (0.7 + 0.6 * n3(p * 2.2)), vec3(0.035, 0.05, 0.022), smoothstep(0.35, 0.8, n.y + 0.3 * (n3(p * 1.3) - 0.5)));
+    } else if (mat > 10.5) alb = vec3(0.045, 0.036, 0.034);                                    // birch twigs, purple-grey
+    else if (mat > 9.5){                                  // birch bark: white, dark lenticels, black at the foot
+      float lent = smoothstep(0.62, 0.7, n3(p * vec3(2.0, 14.0, 2.0)));
+      alb = mix(vec3(0.42, 0.42, 0.40), vec3(0.03, 0.028, 0.025), max(lent * 0.8, 1.0 - smoothstep(0.3, 1.6, hy)));
+    } else if (mat > 8.5){                                // pine needles, a warmer green
+      alb = vec3(0.011, 0.014, 0.009) * (0.75 + 0.5 * n3(p * 2.0));
+      snowAmt = smoothstep(0.7, 0.92, n.y + 0.3 * (n3(p * 1.7) - 0.5)) * 0.25;
+      alb = mix(alb, vec3(0.66, 0.70, 0.76), snowAmt);
+    } else if (mat > 7.5) alb = mix(vec3(0.030, 0.027, 0.024), vec3(0.11, 0.058, 0.032), smoothstep(5.0, 12.0, hy)) * (0.75 + 0.5 * w);  // Scots pine: grey below, rust above
+    else if (mat > 6.5){                                  // spruce needles, nearly black-green
+      alb = vec3(0.006, 0.009, 0.008) * (0.75 + 0.5 * n3(p * 2.0));
+      snowAmt = smoothstep(0.72, 0.95, n.y + 0.35 * (n3(p * 1.7) - 0.5)) * 0.16;
+      alb = mix(alb, vec3(0.66, 0.70, 0.76), snowAmt);
+    } else alb = vec3(0.024, 0.021, 0.019) * (0.7 + 0.6 * w);                                  // spruce bark
   } else if (mat < 1.5) alb = vec3(0.52, 0.2, 0.04);       // jacket, the club's rope colour
   else if (mat < 2.5) alb = vec3(0.035, 0.04, 0.05);
   else if (mat < 3.5) alb = vec3(0.62, 0.62, 0.60);
@@ -404,14 +522,17 @@ vec3 shade(vec3 p, vec3 rd, float t, float mat){
   }
   float dif = max(dot(n, uSunDir), 0.0);
   float occ = t < 3500.0 ? ao(p, n, t) : 1.0;
-  float sh = dif > 0.001 ? (uQuality > 1 && t < 2600.0 ? shadow(p + n * max(0.02, t * 0.002), uSunDir, t) : occ) : 0.0;
+  // in the forest the sun is low, behind the trees and the mist: ambient occlusion carries the shading there
+  float sh = dif > 0.001 ? (uQuality > 1 && t < 2600.0 && fa < 0.05 && mat < 5.5 ? shadow(p + n * max(0.02, t * 0.002), uSunDir, t) : occ) : 0.0;
   vec3 sky = uFogCol * 2.2 + vec3(0.02, 0.03, 0.05);
   vec3 lin = uSunCol * dif * sh
            + sky * (0.55 + 0.45 * n.y) * occ
            + uFogCol * 1.4 * (0.5 - 0.5 * n.y) * occ;           // bounce from the snow below
   vec3 col = alb * lin;
   col += spec * uSunCol * pow(max(dot(reflect(rd, n), uSunDir), 0.0), 8.0) * sh;
-  if (mat > 0.5) col += alb * uSunCol * 0.35 * pow(clamp(1.0 + dot(rd, n), 0.0, 1.0), 3.0) * max(dot(rd, uSunDir) * 0.5 + 0.5, 0.0);  // rim
+  if (mat > 0.5 && mat < 5.5) col += alb * uSunCol * 0.35 * pow(clamp(1.0 + dot(rd, n), 0.0, 1.0), 3.0) * max(dot(rd, uSunDir) * 0.5 + 0.5, 0.0);  // rim
+  if (mat == 7.0 || mat == 9.0 || mat == 11.0) col += vec3(0.010, 0.013, 0.012) * uSunCol * pow(max(dot(rd, uSunDir), 0.0), 4.0);  // a breath of light through the needles
+  gBound = true;
   return col;
 }
 
@@ -441,17 +562,19 @@ void main(){
   vec2 uv = (2.0 * fc - uRes) / uRes.y;
   vec3 rd = normalize(uCamF * uFocal + uCamR * uv.x + uCamU * uv.y);
   vec3 ro = uCam;
+  gRd = rd;
   float t = 1.0, tPrev = 1.0, mat = -1.0;
   for (int i = 0; i < 220; i++){
     if (i >= uSteps) break;
     vec3 p = ro + rd * t;
     if (p.y > 2300.0 && rd.y > 0.0) { t = uTMax + 1.0; break; }
     vec2 h = map(p, t);
+    if (h.y < -0.5){ tPrev = t; t += max(h.x, 0.05); if (t > uTMax) break; continue; }   // a cell wall: step on
     if (h.x < 0.0006 * t){
       mat = h.y;
       if (h.x < 0.0){                                     // overshot a thin crest: bisect back to it
         float a = tPrev, b = t;
-        for (int k = 0; k < 5; k++){ float m = 0.5 * (a + b); vec2 hm = map(ro + rd * m, m); if (hm.x < 0.0) { b = m; mat = hm.y; } else a = m; }
+        for (int k = 0; k < 5; k++){ float m = 0.5 * (a + b); vec2 hm = map(ro + rd * m, m); if (hm.x < 0.0 && hm.y > -0.5) { b = m; mat = hm.y; } else a = m; }
         t = b;
       }
       break;
@@ -476,7 +599,7 @@ void main(){
   outColor = vec4(col, 1.0);
 }`;
 
-// Snow: instanced streaks living in a box that travels with the camera.
+// Snow: instanced soft flakes living in a box that travels with the camera.
 const SNOW_VS = `#version 300 es
 layout(location=0) in vec4 aSeed;
 uniform mat4 uVP; uniform vec3 uCam, uVel; uniform float uTime, uScale, uFocalPx, uDen;
@@ -496,10 +619,8 @@ void main(){
   float size = max((0.006 + 0.01 * aSeed.w) * uFocalPx / c0.w, 0.9 * uScale);
   float blur = 1.0 - smoothstep(0.6, 4.0, c0.w);                         // close flakes defocus
   size *= 1.0 + blur * 3.0;
-  vec2 v = s0 - s1; float len = length(v); vec2 dir = len > 1e-3 ? v / len : vec2(0.0, 1.0);
-  vec2 perp = vec2(-dir.y, dir.x);
-  vec2 off = dir * corner.y * (size + len * 0.5) + perp * corner.x * size;
-  vec2 s = (s0 + s1) * 0.5 + off;
+  float len = 0.0;                                   // round flakes: no motion blur on the 3D
+  vec2 s = s0 + corner * size;
   gl_Position = vec4(s / (uRes * 0.5) * c0.w, 0.0, c0.w);
   vQ = corner;
   vA = (0.5 + 0.5 * aSeed.w) * (1.0 - blur * 0.75) * exp(-c0.w * uDen * 18.0) * smoothstep(0.3, 1.2, c0.w) / (1.0 + len / (size * 2.0) * 0.5);
@@ -598,14 +719,14 @@ function overlay(p, cam, vp, w, h) {
   const txt = alt + '|' + temp + '|' + wind;
   if (txt !== lastRead && readAlt) {
     readAlt.textContent = alt.toLocaleString('en-US') + ' m';
-    readTemp.textContent = '−' + Math.abs(temp) + ' °C';
+    readTemp.textContent = (temp < 0 ? '−' : '+') + Math.abs(temp) + ' °C';
     readWind.textContent = 'NW ' + wind + ' km/h';
     if (altMark) altMark.style.transform = `translateY(${(-(alt - 1700) / 700) * 100}%)`;
     lastRead = txt;
   }
   // FIG. 01 — pinned to the climber while they are still a speck
   if (fig) {
-    const on = p > 0.60 && p < 0.75;
+    const on = p > 0.665 && p < 0.79;
     fig.classList.toggle('is-on', on);
     if (on && vp) {
       const c = project(vp, V.add(CLIMBER, [0, 1.0, 0]));
@@ -724,7 +845,8 @@ function frame(now) {
   const fov = (cam.fov * (W < H ? 1.3 : 1) * Math.PI) / 180;   // portrait: open up so the peak is not cropped
   const focal = 1 / Math.tan(fov / 2);
   const L = look(p);
-  const tmax = Math.min(9000, 7.0 / (L.den * 0.55 + 1e-6));
+  const layer = 1.6 - 1.35 * smooth(clamp((p - 0.37) / 0.08)) + 1.1 * smooth(clamp((p - 0.56) / 0.1));
+  const tmax = Math.min(9000, 6.5 / (L.den * (0.55 + layer * Math.exp(-(cam.pos[1] - 380) / 420)) + 1e-6));   // where the mist is total, stop
   const vel = prevCam && dt > 0 ? V.mul(V.sub(cam.pos, prevCam), 1 / dt) : [0, 0, 0];
   prevCam = cam.pos;
   const white = smooth(clamp((p - 0.975) / 0.02));   // the fog is already white by then: this only settles the last bit
@@ -744,10 +866,12 @@ function frame(now) {
   gl.uniform1f(U.uFogDen, L.den); gl.uniform1f(U.uCloud, L.cloud); gl.uniform1f(U.uWhite, white);
   gl.uniform1f(U.uTMax, tmax); gl.uniform1f(U.uExposure, L.exposure);
   gl.uniform1f(U.uVig, 1 - smooth(clamp((p - 0.87) / 0.1)));
+  gl.uniform1f(U.uLayer, layer);
   gl.uniform3f(U.uPaper, 0.957, 0.949, 0.933);
   gl.uniform1i(U.uSteps, coarse ? 110 : 180);
   gl.uniform1i(U.uCloudSteps, coarse ? 7 : 12);
   gl.uniform1i(U.uQuality, quality);
+  gl.uniform1f(U.uTreeCell, coarse ? 13.5 : 11.0);
   gl.disable(gl.BLEND);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -800,7 +924,6 @@ if (ctx) {
     if (visible) request(); else if (target >= 1 || scrollProgress() >= 1) finish(false);
   }).observe(section);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { last = performance.now(); request(); } });
-  if (reduced) addEventListener('resize', () => requestAnimationFrame(frame));
   section.querySelector('.intro-skip')?.addEventListener('click', (e) => { e.preventDefault(); finish(true); section.querySelector('.intro-end h2, .intro-end')?.focus?.(); });
   request();
 } else markDone();

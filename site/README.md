@@ -48,12 +48,15 @@ Real: coordinates, summit heights, stations and huts, the terrain, the routes' s
 ## The intro
 
 It plays on load and on every reload; walking back to Home from another page in the same visit goes
-straight to the title card. The camera finds the climber, travels beside the wall and never closes in;
+straight to the title card. Fog, then a descent into a misty spruce forest walked along a trail (trees
+are SDFs in the same raymarcher, one per grid cell, so light and fog are continuous); the trees thin,
+the mist lifts and the north face appears, one continuous mass. The camera finds the climber on an ice
+field, travels beside the wall and never closes in;
 a cloud bank rolls over, contrast and depth go, the fog itself turns into the page's paper, and the
 title card condenses out of it. At that point the stage becomes the first screen of the page: its
 scroll length is removed without moving what you see, the canvas is deleted and the WebGL context is
 released. Scrolling up afterwards is just the page. `?intro` replays it (the title card's *Replay the
-ascent* links there). `?p=0.62` freezes the camera; `?cam=…` places it (see `intro.js`).
+ascent* links there). `?p=0.3` (forest) or `?p=0.62` freezes the camera; `?cam=…` places it (see `intro.js`).
 
 ## Motion language
 
