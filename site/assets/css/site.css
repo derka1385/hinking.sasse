@@ -169,7 +169,7 @@ html:not(.intro-complete) .intro-end-replay { visibility: hidden; }
 
 .intro-grain {
   position: absolute; inset: -12%; pointer-events: none; background: url(../img/grain.png);
-  opacity: calc((.018 + .072 * clamp(0, (.2 - var(--p)) * 14.3, 1)) * clamp(0, (.97 - var(--p)) * 8, 1)); mix-blend-mode: overlay;
+  opacity: calc(.09 * clamp(0, (.97 - var(--p)) * 8, 1)); mix-blend-mode: overlay;
   animation: grain 1.2s steps(6) infinite;
 }
 @keyframes grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-7%, 4%); } 40% { transform: translate(5%, -9%); } 60% { transform: translate(-3%, 8%); } 80% { transform: translate(9%, 2%); } 100% { transform: translate(0, 0); } }

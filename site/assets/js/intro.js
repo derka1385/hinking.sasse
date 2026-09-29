@@ -137,9 +137,9 @@ const LOOKS = [
   [0.30, [0.0600, 0.0720, 0.080], 0.00070, 0.30, [1.10, 1.00, 0.88], 1.0, [0.46, 0.18, -0.87]],
   [0.40, [0.0950, 0.1080, 0.120], 0.00045, 0.22, [1.50, 1.36, 1.18], 1.0, [0.55, 0.22, -0.80]],
   [0.43, [0.1100, 0.1250, 0.140], 0.00026, 0.16, [1.70, 1.55, 1.35], 1.0, [0.62, 0.26, -0.68]],
-  [0.46, [0.0900, 0.1120, 0.140], 0.00014, 0.14, [1.90, 1.78, 1.58], 1.0, [0.68, 0.30, -0.55]],
-  [0.56, [0.0800, 0.1040, 0.140], 0.00010, 0.06, [2.20, 2.08, 1.88], 1.0, [0.80, 0.40, -0.10]],
-  [0.72, [0.0950, 0.1180, 0.150], 0.00010, 0.10, [2.35, 2.22, 2.00], 1.0, [0.80, 0.42, 0.05]],
+  [0.46, [0.0900, 0.1040, 0.122], 0.00018, 0.16, [1.70, 1.58, 1.44], 1.0, [0.72, 0.32, -0.40]],
+  [0.56, [0.1100, 0.1250, 0.145], 0.00013, 0.06, [2.20, 2.05, 1.85], 1.0, [0.82, 0.40, -0.05]],
+  [0.72, [0.1500, 0.1650, 0.185], 0.00012, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
   [0.87, [0.2300, 0.2450, 0.262], 0.00026, 0.55, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
   [0.91, [0.4000, 0.4150, 0.430], 0.00110, 1.40, [2.60, 2.45, 2.30], 1.0, [0.80, 0.42, 0.05]],
   [0.945, [0.660, 0.668, 0.668], 0.00500, 2.40, [2.80, 2.70, 2.55], 1.04, [0.80, 0.42, 0.05]],
@@ -240,7 +240,7 @@ uniform sampler2D uRock;
 uniform vec2 uRes; uniform float uTime, uFocal, uPix;
 uniform vec3 uCam, uCamR, uCamU, uCamF;
 uniform vec3 uSunDir, uSunCol, uFogCol;
-uniform float uFogDen, uCloud, uWhite, uTMax, uExposure, uVig, uLayer;
+uniform float uFogDen, uCloud, uWhite, uTMax, uExposure, uVig;
 uniform vec3 uPaper;
 uniform int uSteps, uCloudSteps, uQuality;
 out vec4 outColor;
@@ -272,6 +272,16 @@ vec3 faceUVW(vec3 p){ vec3 q = p - S1; return vec3(q.x, dot(q, TY), dot(q, NF));
 float segDist(vec2 u, vec2 a, vec2 d){ return length(u - a - d * clamp(dot(u - a, d) / dot(d, d), 0.0, 1.0)); }
 // how far from the two rope teams' couloirs (face coordinates, metres)
 float teamLane(vec2 u){ return min(segDist(u, CLF[0], TSEG), segDist(u, CLF[3], TSEG)); }
+// the snow gullies they climb: long and narrow, from the snowfield above down past the last climber
+float gully(vec2 u, vec2 a, vec2 d){
+  float h = clamp(dot(u - a, d) / dot(d, d), 0.0, 1.0);
+  return length(u - a - d * h) + 16.0 * smoothstep(0.6, 1.0, h);            // tapers out below the teams
+}
+float gullyLane(vec2 u){
+  u.x += 16.0 * (vn3(vec3(u.y / 210.0, 3.3, 1.1)) - 0.5);                  // it wanders down the face
+  vec2 d = TSEG * 16.0;
+  return min(gully(u, CLF[0] - TSEG * 10.0, d), gully(u, CLF[3] - TSEG * 10.0, d));
+}
 
 // ---- rock: restrained relief stretched along the natural fall line.
 float rock(vec3 p, float lod, float nearGully){
@@ -441,7 +451,10 @@ float rope(vec3 p, float lod, vec3 L){
 }
 
 vec2 map(vec3 p, float lod){
-  vec2 r = vec2(min(massif(p, lod), (p.y - ground(p.xz, lod)) * 0.55), 0.0);   // no smin: the massif's distance is a scaled bound, a blend with it floats off the snow
+  // everything ground() adds to groundA stays under 620 m (2100 m in the far ranges): high above it, skip it
+  float gb = p.y - groundA(p.xz) - (p.z < -500.0 ? 2100.0 : 620.0);
+  float g = gb > 50.0 ? gb : p.y - ground(p.xz, lod);   // (never near the bound itself: a small bound would read as a hit)
+  vec2 r = vec2(min(massif(p, lod), g * 0.55), 0.0);   // no smin: the massif's distance is a scaled bound, a blend with it floats off the snow
   float inflate = 0.75 * uPix * lod;                    // never thinner than a pixel: from the valley, a line of dots
   for (int j = 0; j < 2; j++){
     vec3 L = CLS[j * 3];
@@ -464,7 +477,7 @@ vec3 normal(vec3 p, float t){
 
 float shadow(vec3 ro, vec3 rd, float lod){
   float res = 1.0, t = (0.05 + lod * 0.002) * (1.0 + fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))));   // jittered start: grain, not bands
-  for (int i = 0; i < 22; i++){
+  for (int i = 0; i < 14; i++){
     float h = map(ro + rd*t, lod * 4.0 + t * 3.0).x;
     res = min(res, 8.0 * h / t);
     t += clamp(h, 0.03 + t * 0.03, 120.0);
@@ -491,7 +504,7 @@ vec3 fogColor(vec3 rd){
 float fogAmount(vec3 ro, vec3 rd, float t){
   float b = 1.0 / 420.0, base = 380.0;
   float k = abs(rd.y) < 1e-4 ? t : (1.0 - exp(-t * rd.y * b)) / (rd.y * b);
-  return 1.0 - exp(-uFogDen * (0.55 * t + uLayer * exp(-(ro.y - base) * b) * k));
+  return 1.0 - exp(-uFogDen * (0.55 * t + 1.6 * exp(-(ro.y - base) * b) * k));
 }
 
 // Close rock comes from a photographed Nordic gneiss surface. Mirrored tiling and
@@ -526,16 +539,17 @@ vec3 shade(vec3 p, vec3 rd, float t, float mat){
     float basin = vn3(vec3(p.x / 150.0, 2.2, p.z / 150.0)) * 0.65
                 + vn3(vec3(p.x / 42.0, 5.3, p.z / 42.0)) * 0.35;
     // Snow as on Ama Dablam: plastered above a ragged snowline (faces hold it to ~60 degrees, fluted by
-    // spindrift), on ledges and in couloirs below; rock shows on the steepest steps. It is judged on a
-    // blurred normal, so it settles on the form rather than on every facet.
-    vec3 nb = t < 3000.0 ? normal(p, t * 5.0) : n;
-    float sl = smoothstep(220.0, 650.0, p.y + 160.0 * (basin - 0.5));
-    float hold = mix(0.8, 0.30, sl);
-    float snow = smoothstep(hold, hold + 0.16, nb.y + 0.16 * (basin - 0.5));
+    // spindrift), on ledges and in couloirs below; rock shows on the steepest steps.
+    // below the snowline: dark rock, snow only on ledges; above it plastered, but ridges and steps stay
+    // bare where the detailed surface turns steep (wind-scoured), which is what gives the contrast
+    float sl = smoothstep(480.0, 950.0, p.y + 180.0 * (basin - 0.5));
+    float hold = mix(0.9, 0.4, sl);
+    float snow = smoothstep(hold, hold + 0.12, n.y + 0.2 * (basin - 0.5));
     float flute = n3(vec3(p.x / 6.0, p.y / 80.0, p.z / 6.0)) * 0.6 + n3(vec3(p.x / 19.0, p.y / 260.0, p.z / 19.0)) * 0.4;
-    float steep = 1.0 - smoothstep(0.42, 0.72, nb.y);
+    float steep = 1.0 - smoothstep(0.42, 0.72, n.y);
     snow *= 1.0 - 0.5 * steep * smoothstep(0.56, 0.3, flute);
-    snow = max(snow, 1.0 - smoothstep(20.0, 90.0, teamLane(faceUVW(p).xy) + 35.0 * (n3(p / 90.0) - 0.5)));   // the teams' couloirs
+    vec2 fu = faceUVW(p).xy;
+    snow = max(snow, 1.0 - smoothstep(8.0, 26.0, gullyLane(fu) + 14.0 * (n3(vec3(fu.x / 30.0, fu.y / 120.0, 4.0)) - 0.5)));   // the teams' snow gullies
     float onGround = 1.0 - smoothstep(0.0, 4.0, gy);
     if (onGround > 0.0){
       float g = glacier(p.xz);
@@ -560,7 +574,7 @@ vec3 shade(vec3 p, vec3 rd, float t, float mat){
   }
   float dif = max(dot(n, uSunDir), 0.0);
   float occ = t < 3500.0 ? ao(p, n, t) : 1.0;
-  float sh = dif > 0.001 ? (uQuality > 1 && t < 1800.0 ? shadow(p + n * max(0.02, t * 0.002), uSunDir, t) : occ) : 0.0;
+  float sh = dif > 0.001 ? (uQuality > 1 && t < 1200.0 ? shadow(p + n * max(0.02, t * 0.002), uSunDir, t) : occ) : 0.0;
   vec3 sky = uFogCol * 2.2 + vec3(0.02, 0.03, 0.05);
   vec3 lin = uSunCol * dif * sh
            + sky * (0.55 + 0.45 * n.y) * occ
@@ -585,57 +599,6 @@ vec4 clouds(vec3 ro, vec3 rd, float tHit, vec2 fc){
     d = (smoothstep(0.46, 0.72, d) + 0.16 * max(uCloud - 1.0, 0.0)) * uCloud;   // thickens, keeps its wisps
     float a = 1.0 - exp(-d * dt * 0.035);
     L += T * a * lit; T *= 1.0 - a;
-    t += dt;
-  }
-  return vec4(L, T);
-}
-
-// how clear the air is: the sky, the cumulus and the cloud sea only exist between the fogs
-float clearAir(){ return (1.0 - smoothstep(0.00018, 0.0005, uFogDen)) * (1.0 - smoothstep(0.3, 1.0, uCloud)); }
-
-// a blue sky, and a field of cumulus above the summits (sunlit tops, grey bellies)
-vec3 sky(vec3 ro, vec3 rd){
-  vec3 c = fogColor(rd);
-  float clear = clearAir();
-  if (clear < 0.01) return c;
-  c = mix(c, vec3(0.028, 0.07, 0.19) * uSunCol.g * 0.9, clear * smoothstep(0.0, 0.45, rd.y));
-  if (rd.y > 0.004){
-    float tc = (2600.0 - ro.y) / rd.y;
-    vec2 q = (ro.xz + rd.xz * tc) / 1300.0 + vec2(uTime * 0.003, uTime * 0.001);
-    float d = vn3(vec3(q, 1.0)) * 0.55 + n3(vec3(q * 2.7, 2.0)) * 0.3 + n3(vec3(q * 7.3, 3.0)) * 0.15;
-    float ds = vn3(vec3(q + uSunDir.xz * 0.05, 1.0)) * 0.55 + n3(vec3((q + uSunDir.xz * 0.05) * 2.7, 2.0)) * 0.3 + n3(vec3(q * 7.3, 3.0)) * 0.15;
-    float a = smoothstep(0.48, 0.7, d) * clear * smoothstep(0.004, 0.06, rd.y) * (1.0 - smoothstep(12000.0, 40000.0, tc));
-    float lit = 0.55 + 0.45 * smoothstep(-0.08, 0.12, d - ds);
-    c = mix(c, mix(uFogCol * 2.6 + vec3(0.03, 0.04, 0.06), uSunCol * 0.62, lit), a);
-  }
-  return c;
-}
-
-// the cloud sea: a layer lying in the valleys below the camera, wrapping the feet of the peaks
-vec4 cloudSea(vec3 ro, vec3 rd, float tHit, vec2 fc){
-  float clear = clearAir();
-  if (clear < 0.01 || abs(rd.y) < 1e-4) return vec4(0.0, 0.0, 0.0, 1.0);
-  const float Y0 = 170.0, Y1 = 520.0;
-  float ta = (Y0 - ro.y) / rd.y, tb = (Y1 - ro.y) / rd.y;
-  if (ta > tb){ float s = ta; ta = tb; tb = s; }
-  ta = max(ta, 0.0); tb = min(tb, min(tHit, 4500.0));
-  if (tb <= ta) return vec4(0.0, 0.0, 0.0, 1.0);
-  float dt = (tb - ta) / 14.0, t = ta + dt * hash12(fc + fract(uTime * 3.7) * 61.0), T = 1.0;
-  vec3 L = vec3(0.0), wind = vec3(uTime * 2.2, 0.0, uTime * 0.8);
-  for (int i = 0; i < 14; i++){
-    vec3 p = ro + rd * t;
-    float pr = smoothstep(Y0, Y0 + 90.0, p.y) * (1.0 - smoothstep(Y1 - 150.0, Y1, p.y));
-    vec3 w = (p - wind) / 330.0;
-    float d = n3(w) * 0.6 + n3(w * 3.1) * 0.28 + n3(w * 9.3) * 0.12;
-    float dens = smoothstep(0.46, 0.8, d) * pr * clear;
-    if (dens > 0.001){
-      vec3 ws = w + uSunDir * 0.22;
-      float light = exp(-2.4 * smoothstep(0.5, 0.74, n3(ws) * 0.6 + n3(ws * 3.1) * 0.28 + 0.06));
-      vec3 cc = mix(uFogCol * 2.4 + vec3(0.02, 0.03, 0.05), uSunCol * 0.6, light);
-      cc = mix(cc, fogColor(rd), fogAmount(ro, rd, t));
-      float a = 1.0 - exp(-dens * dt * 0.012);
-      L += T * a * cc; T *= 1.0 - a;
-    }
     t += dt;
   }
   return vec4(L, T);
@@ -673,10 +636,8 @@ void main(){
   if (mat < -0.5 && t < uTMax && bestR < 0.03 && bestM < 0.5){ t = bestT; mat = bestM; }   // out of steps creeping over far terrain: that terrain, not a grey hole (not the climber)
   vec3 col;
   if (t < uTMax && mat > -0.5) col = shade(ro + rd * t, rd, t, mat);
-  else { t = uTMax; col = sky(ro, rd); }
-  if (mat > -0.5 || t < uTMax) col = mix(col, fogColor(rd), fogAmount(ro, rd, t));
-  vec4 sea = cloudSea(ro, rd, t, fc);
-  col = col * sea.a + sea.rgb;
+  else { t = uTMax; col = fogColor(rd); }
+  col = mix(col, fogColor(rd), fogAmount(ro, rd, t));
   vec4 cl = clouds(ro, rd, t, fc);
   col = col * cl.a + cl.rgb;
   col = aces(col * uExposure * 1.6);
@@ -952,8 +913,7 @@ function frame(now) {
   const fov = (cam.fov * (W < H ? 1.3 : 1) * Math.PI) / 180;   // portrait: open up so the peak is not cropped
   const focal = 1 / Math.tan(fov / 2);
   const L = look(p);
-  const layer = 1.6 - 1.35 * smooth(clamp((p - 0.37) / 0.08)) + 1.1 * smooth(clamp((p - 0.56) / 0.1));
-  const tmax = Math.min(9000, 6.5 / (L.den * (0.55 + layer * Math.exp(-(cam.pos[1] - 380) / 420)) + 1e-6));   // where the mist is total, stop
+  const tmax = Math.min(9000, 6.5 / (L.den * (0.55 + 1.6 * Math.exp(-(cam.pos[1] - 380) / 420)) + 1e-6));   // where the mist is total, stop
   const vel = prevCam && dt > 0 ? V.mul(V.sub(cam.pos, prevCam), 1 / dt) : [0, 0, 0];
   prevCam = cam.pos;
   const white = smooth(clamp((p - 0.975) / 0.02));   // the fog is already white by then: this only settles the last bit
@@ -974,7 +934,6 @@ function frame(now) {
   gl.uniform1f(U.uFogDen, L.den); gl.uniform1f(U.uCloud, L.cloud); gl.uniform1f(U.uWhite, white);
   gl.uniform1f(U.uTMax, tmax); gl.uniform1f(U.uExposure, L.exposure);
   gl.uniform1f(U.uVig, 1 - smooth(clamp((p - 0.87) / 0.1)));
-  gl.uniform1f(U.uLayer, layer);
   gl.uniform3f(U.uPaper, 0.957, 0.949, 0.933);
   gl.uniform1i(U.uSteps, coarse ? 110 : 180);
   gl.uniform1i(U.uCloudSteps, coarse ? 7 : 12);

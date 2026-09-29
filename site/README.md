@@ -48,11 +48,11 @@ Real: coordinates, summit heights, stations and huts, the terrain, the routes' s
 ## The intro
 
 It plays on load and on every reload; walking back to Home from another page in the same visit goes
-straight to the title card. Fog at altitude; as it clears the camera glides, above a sea of cloud and
-under a sky of cumulus, toward an asymmetric range (the main crest has connected shoulders; `PEAKS` in
-`intro.js` are the side masses). Snow is plastered above a ragged snowline, fluted by spindrift, and
-lies on ledges below it; close rock uses a generated gneiss texture (`intro-kebnekaise-rock.webp`, its
-prompt alongside). Two rope teams of three climb snow couloirs in the face, a line of dots from the
+straight to the title card. Fog at altitude (the V2 atmosphere: navy, then a grey-blue mist, film
+grain); as it clears the camera glides toward an asymmetric range (the main crest has connected
+shoulders; `PEAKS` in `intro.js` are the side masses). Snow is plastered above a ragged snowline,
+fluted by spindrift, and lies on ledges below it; long snow gullies run down the main face; close rock uses a generated gneiss texture (`intro-kebnekaise-rock.webp`, its
+prompt alongside). Two rope teams of three climb those gullies, a line of dots from the
 valley; the JS stands each climber on the face's actual surface (`onSnow`). The camera travels beside
 the lead team without closing in; scroll maps to story time through `story()` in `intro.js`;
 a cloud bank rolls over, contrast and depth go, the fog itself turns into the page's paper, and the
