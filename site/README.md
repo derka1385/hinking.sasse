@@ -48,17 +48,20 @@ Real: coordinates, summit heights, stations and huts, the terrain, the routes' s
 ## The intro
 
 It plays on load and on every reload; walking back to Home from another page in the same visit goes
-straight to the title card. Fog, then a short passage through a misty spruce forest along a trail
-(trees are SDFs in the same raymarcher, so light and fog are continuous). The forest ends against a
-terminal moraine; over its crest the valley climbs a hummocky foreland between foothills to a glacier
-that spills from the foot of the north face, one continuous mass. The camera finds the climber on an ice
+straight to the title card. Fog, then down through the cloud base above a valley: the north face (one
+continuous mass) appears over a terminal moraine as the mist clears, and the camera cranes up a hummocky
+foreland between foothills to the glacier at the foot of the face. It finds the climber on an ice
 field, travels beside the wall and never closes in; scroll maps to story time through `story()` in
-`intro.js` (the forest gets about one screen of scroll, the approach the most);
+`intro.js`;
 a cloud bank rolls over, contrast and depth go, the fog itself turns into the page's paper, and the
 title card condenses out of it. At that point the stage becomes the first screen of the page: its
 scroll length is removed without moving what you see, the canvas is deleted and the WebGL context is
 released. Scrolling up afterwards is just the page. `?intro` replays it (the title card's *Replay the
 ascent* links there). `?p=0.3` (forest) or `?p=0.62` freezes the camera; `?cam=…` places it (see `intro.js`).
+
+A version with a forest passage before the valley was tried and dropped (its SDF trees read as flat
+silhouettes, and it cost time and frame rate for little). It is kept, frozen and playable, at
+`archive/intro-forest/` (git tag `intro-forest-archive`); it does not follow later changes to the site.
 
 ## Motion language
 
