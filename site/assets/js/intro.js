@@ -291,6 +291,13 @@ float glacierU(vec2 xz){ return (xz.x - 40.0 - 90.0 * sin(xz.y / 700.0)) / mix(5
 // hummocks; where the camera skims the valley floor they are measured from its line (x = 0), so the
 // camera never flies into one
 float lumps(vec2 xz, float lod){ return 24.0 * vn3(vec3(xz.x, 3.0, xz.y) / 230.0) + (lod < 1200.0 ? 6.0 * vn3(vec3(xz.x, 5.0, xz.y) / 41.0) * (1.0 - smoothstep(600.0, 1200.0, lod)) : 0.0); }   // analytic: 8-bit texels terrace at this height
+// talus and avalanche cones fanning out from the foot of the face, clear of the climber's fall line
+float cone(vec2 xz, vec2 c, float h, float r){ float d = length((xz - c) / vec2(1.0, 1.3)) / r; float s = smoothstep(1.0, 0.0, d); return h * s * s; }   // rounded top, soft toe
+float cones(vec2 xz){
+  if (xz.y > 780.0) return 0.0;
+  return cone(xz, vec2(-330.0, 40.0), 190.0, 460.0) + cone(xz, vec2(-140.0, 60.0), 120.0, 340.0)
+       + cone(xz, vec2(250.0, 50.0), 160.0, 400.0) + cone(xz, vec2(440.0, 20.0), 200.0, 480.0);
+}
 float relief(vec2 xz, float lod){
   float w = smoothstep(3300.0, 3650.0, xz.y);
   float l = lumps(xz, lod) - (w > 0.0 ? w * lumps(vec2(0.0, xz.y), lod) : 0.0);
@@ -299,14 +306,18 @@ float relief(vec2 xz, float lod){
 
 float ground(vec2 xz, float lod){
   float h = groundA(xz);
-  float side = max(abs(xz.x - 60.0) - mix(560.0, 1000.0, smoothstep(600.0, 3600.0, xz.y)), 0.0);   // the valley narrows to the face
+  // a valley between mountains: its walls close in toward the face, and the face has a foot, buttresses
+  // and spurs climbing to it on either side of the glacier, so the wall never stands on a plain
+  float side = max(abs(xz.x - 60.0) - mix(380.0, 750.0, smoothstep(600.0, 4500.0, xz.y)), 0.0);
   float far = 1.0 - smoothstep(-2000.0, -600.0, xz.y);
+  float foot = smoothstep(2000.0, 150.0, xz.y);
+  foot *= foot * (1.0 - 0.8 * (1.0 - smoothstep(0.4, 1.6, abs(glacierU(xz)))));   // lower along the glacier's line
   vec3 q = vec3(xz.x, 11.0, xz.y) / 1700.0; q += (vec3(n3(q * 0.7), 0.0, n3(q * 0.7 + 4.0)) - 0.5) * 0.8;
-  if (side > 0.0 || far > 0.0){
+  if (side > 0.0 || far > 0.0 || foot > 0.001){
     float rg = 0.0, a = 1.0;
     for (int i = 0; i < 5; i++){ float n = 1.0 - abs(2.0 * n3(q) - 1.0); rg += a * n; a *= 0.48; q = ROT * q * 2.03; }
     rg /= 1.9;
-    h += smoothstep(0.0, 1600.0, side) * (380.0 + 820.0 * rg * rg) + far * (300.0 + 900.0 * rg * rg);
+    h += smoothstep(0.0, 1200.0, side) * (420.0 + 800.0 * rg * rg) + far * (300.0 + 900.0 * rg * rg) + foot * (120.0 + 380.0 * rg * rg);
   }
   if (xz.y < 3300.0){
     // above the moraine: the glacier and its lateral moraines, hills rising to the valley walls, an apron at the face
@@ -314,7 +325,7 @@ float ground(vec2 xz, float lod){
     float hills = 80.0 * vn3(vec3(xz.x, 1.0, xz.y) / 650.0) * smoothstep(3300.0, 2900.0, xz.y) * (0.7 + 0.3 * smoothstep(150.0, 600.0, abs(xz.x - 60.0)));
     float lat = (u - 1.15) / 0.22;
     float apron = smoothstep(800.0, 100.0, xz.y);
-    h += 50.0 * g + 42.0 * exp(-lat * lat) * along + hills * (1.0 - g) + 60.0 * apron * apron;
+    h += 50.0 * g + 42.0 * exp(-lat * lat) * along + hills * (1.0 - g) + 60.0 * apron * apron + cones(xz);
     h += relief(xz, lod) * (1.0 - 0.9 * g);
   } else h += relief(xz, lod);
   return h;
@@ -432,7 +443,12 @@ vec3 shade(vec3 p, vec3 rd, float t, float mat){
     float snow = smoothstep(0.56, 0.72, n.y + 0.28 * (w - 0.5) + 0.1 * (v - 0.5));                 // ledges
     snow = max(snow, smoothstep(0.62, 0.86, gully + 0.25 * (w - 0.5)) * smoothstep(0.18, 0.4, n.y)); // gullies
     snow = max(snow, (1.0 - smoothstep(0.55, 1.05, iceField(p, f))) * smoothstep(0.08, 0.4, n.y + 0.3 * (w - 0.5)));   // the ice field, rock showing where steep
-    snow = max(snow, (1.0 - smoothstep(10.0, 90.0, p.y - ground(p.xz, t))) * smoothstep(0.08, 0.4, n.y) * (1.0 - smoothstep(420.0, 560.0, p.y)));   // the apron at the foot of the face
+    float gy = p.y - ground(p.xz, t);
+    snow = max(snow, (1.0 - smoothstep(10.0, 90.0, gy)) * smoothstep(0.08, 0.4, n.y) * (1.0 - smoothstep(420.0, 560.0, p.y)));   // the apron at the foot of the face
+    // the valley floor is moraine: scree shows through the snow in wind-scoured patches
+    float onGround = (1.0 - smoothstep(0.0, 4.0, gy)) * smoothstep(0.82, 0.95, n.y);   // the floor, not the walls
+    snow *= 1.0 - onGround * 0.75 * smoothstep(0.5, 0.66, n3(p / 52.0) * 0.65 + n3(p / 9.0) * 0.35);
+    rk = mix(rk, vec3(0.17, 0.162, 0.152) * (0.7 + 0.6 * fine), onGround * 0.7);
     alb = mix(rk, vec3(0.76, 0.80, 0.87) * (0.88 + 0.16 * w), snow);
     spec = snow * 0.03; snowAmt = snow;
   } else if (mat < 1.5) alb = vec3(0.52, 0.2, 0.04);       // jacket, the club's rope colour
@@ -508,7 +524,7 @@ void main(){
     t += h.x * 0.72;
     if (t > uTMax) break;
   }
-  if (mat < -0.5 && t < uTMax && bestR < 0.01 && bestM < 0.5){ t = bestT; mat = bestM; }   // out of steps creeping over far terrain: that terrain, not a grey hole (not the climber)
+  if (mat < -0.5 && t < uTMax && bestR < 0.03 && bestM < 0.5){ t = bestT; mat = bestM; }   // out of steps creeping over far terrain: that terrain, not a grey hole (not the climber)
   vec3 col;
   if (t < uTMax && mat > -0.5) col = shade(ro + rd * t, rd, t, mat);
   else { t = uTMax; col = fogColor(rd); }
