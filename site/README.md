@@ -48,18 +48,18 @@ Real: coordinates, summit heights, stations and huts, the terrain, the routes' s
 ## The intro
 
 It plays on load and on every reload; walking back to Home from another page in the same visit goes
-straight to the title card. Fog at altitude; as it clears the camera glides, never dropping, up a deep
-Himalayan-style gorge lined with pyramidal peaks (`PEAKS` in `intro.js`: four planes each, sharing the
-face's rock: ribs and couloirs down the fall line, snow and ice to ~60°, spindrift flutes, rock bands),
-with a debris-covered glacier at the bottom and two giants far behind. At its head the north face (one
-continuous mass) rises from the gorge. It finds the climber on an ice
-field, travels beside the wall and never closes in; scroll maps to story time through `story()` in
-`intro.js`;
+straight to the title card. Fog at altitude; as it clears the camera glides, above a sea of cloud and
+under a sky of cumulus, toward an asymmetric range (the main crest has connected shoulders; `PEAKS` in
+`intro.js` are the side masses). Snow is plastered above a ragged snowline, fluted by spindrift, and
+lies on ledges below it; close rock uses a generated gneiss texture (`intro-kebnekaise-rock.webp`, its
+prompt alongside). Two rope teams of three climb snow couloirs in the face, a line of dots from the
+valley; the JS stands each climber on the face's actual surface (`onSnow`). The camera travels beside
+the lead team without closing in; scroll maps to story time through `story()` in `intro.js`;
 a cloud bank rolls over, contrast and depth go, the fog itself turns into the page's paper, and the
 title card condenses out of it. At that point the stage becomes the first screen of the page: its
 scroll length is removed without moving what you see, the canvas is deleted and the WebGL context is
 released. Scrolling up afterwards is just the page. `?intro` replays it (the title card's *Replay the
-ascent* links there). `?p=0.3` (forest) or `?p=0.62` freezes the camera; `?cam=…` places it (see `intro.js`).
+ascent* links there). `?p=0.35` or `?p=0.62` freezes the camera; `?cam=…` places it (see `intro.js`).
 
 A version with a forest passage before the valley was tried and dropped (its SDF trees read as flat
 silhouettes, and it cost time and frame rate for little). It is kept, frozen and playable, at

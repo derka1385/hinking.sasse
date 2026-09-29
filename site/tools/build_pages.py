@@ -269,12 +269,12 @@ def intro():
     <ol class="intro-chapters" aria-hidden="true">
       <li data-chapter="0"><b>01</b> Fog</li>
       <li data-chapter="0.42"><b>02</b> The mountain</li>
-      <li data-chapter="0.665"><b>03</b> One climber</li>
+      <li data-chapter="0.665"><b>03</b> The rope team</li>
       <li data-chapter="0.89"><b>04</b> Cloud</li>
     </ol>
     <div class="intro-readout" aria-hidden="true"><span data-read="alt">1,750 m</span><span data-read="temp">−8 °C</span><span data-read="wind">NW 11 km/h</span></div>
     <div class="intro-alt" aria-hidden="true"><i></i></div>
-    <div class="intro-fig" aria-hidden="true"><span class="intro-fig-line"></span><span class="intro-fig-text"><b>Fig. 01</b> One climber, 1.8 m<br>North face, 1,550 m</span></div>
+    <div class="intro-fig" aria-hidden="true"><span class="intro-fig-line"></span><span class="intro-fig-text"><b>Fig. 01</b> One climber, 1.8 m<br>North face, 1,250 m</span></div>
     <div class="intro-cue" aria-hidden="true"><span>Scroll</span><i></i></div>
 
     <div class="intro-end" tabindex="-1">
