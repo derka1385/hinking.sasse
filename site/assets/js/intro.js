@@ -45,33 +45,34 @@ const V = {
 // ---------------------------------------------------------------- the world (metres, y up)
 // The face is a plane through the summit, 66° steep, facing the valley, displaced into ribs and
 // ledges. The climber stands on an ice field in it; a glacier and its moraines fill the valley in front.
-const SUMMIT = [80, 1150, -320];
 const NF = V.norm([0, 0.45, 1]);          // face normal
 const TX = [1, 0, 0];                     // across the face
 const TY = V.cross(NF, TX);               // up the face
-const CU = -20, CV = -640;                // climber, in face coordinates: on an ice field in the face
+const RAISE = 400;                        // the summit, 400 m further up its own face: a peak that dominates
+const SUMMIT = V.add([80, 1150, -320], V.mul(TY, RAISE));
+const CU = -20, CV = -640 - RAISE;        // climber, in face coordinates: on an ice field in the face
 const CLIMBER = V.add(SUMMIT, V.add(V.mul(TX, CU), V.mul(TY, CV)));
 // The valley floor is analytic so the camera can skim it (the shader uses the same functions).
 const moraine = (x, z) => { const d = (z - 3470 - 60 * Math.sin(x / 260)) / 150; return 36 * Math.exp(-d * d); };   // closes the valley
 const rise = (z) => { const t = clamp((2900 - z) / 2600); const s = t * t * (3 - 2 * t); return 150 * s * s; };      // the foreland climbing to the face
-const groundAt = (x, z) => -0.075 * Math.max(z - 250, 0) + 2.5 * Math.sin(x / 37 + 1.3) * Math.sin(z / 53) + 1.8 * Math.sin(z / 91 + x / 140) + moraine(x, z) + rise(z);
-const low = (z, up) => [0, groundAt(0, z) + up, z];
+const DEEP = 300;                         // the valley is a gorge: its floor sits deep between the peaks
+const groundAt = (x, z) => -DEEP - 0.075 * Math.max(z - 250, 0) + 2.5 * Math.sin(x / 37 + 1.3) * Math.sin(z / 53) + 1.8 * Math.sin(z / 91 + x / 140) + moraine(x, z) + rise(z);
 const at = (n, x, y, up = 0) => V.add(V.add(V.add(CLIMBER, V.mul(NF, n)), V.add(V.mul(TX, x), V.mul(TY, y))), [0, up, 0]);
 const LOOK = V.add(CLIMBER, [0, 1.1, 0]);
 
 // Camera keys: story time (see story()), position, target, vertical fov (deg).
-// Inside the cloud above the valley, down through its base, the face appears over the moraine as the
-// mist clears, a slow crane up the valley to the wall, then the climber — small, seen from beside the
+// Inside the cloud at altitude; as it clears the valley opens below and the peak ahead; a level glide
+// up the valley to the wall, then the climber — small, seen from beside the
 // face, never closer — and into the cloud.
 const KEYS = [
-  [0.00, [-60, -60, 4700], [40, 480, 0], 42],
-  [0.20, [-40, -170, 4330], [40, 500, 0], 43],
-  [0.36, low(3990, 16), [40, 510, 0], 44],
-  [0.455, low(3860, 8), [40, 520, 0], 44],
-  [0.50, low(3610, 40), [40, 560, 0], 40],            // up the moraine: the valley opens beyond the crest
-  [0.545, [-20, -110, 3150], [40, 620, 0], 38],
-  [0.59, [0, 170, 2500], [45, 620, -60], 36],
-  [0.635, [0, 470, 1820], [45, 600, -60], 34],
+  [0.00, [-90, 700, 4900], [40, 860, 0], 42],
+  [0.20, [-70, 670, 4350], [40, 840, 0], 42],
+  [0.36, [-50, 640, 3800], [40, 820, 0], 41],
+  [0.455, [-35, 620, 3400], [40, 790, 0], 40],        // out of the cloud: the valley below, the peak ahead
+  [0.50, [-25, 610, 3050], [40, 760, 0], 38],
+  [0.545, [-15, 600, 2700], [45, 720, 0], 37],
+  [0.59, [-5, 590, 2300], [45, 660, -60], 35],
+  [0.635, [0, 580, 1820], [45, 610, -60], 34],
   [0.68, at(620, -10, -120), LOOK, 30],
   [0.74, at(320, 30, -70), LOOK, 28],
   [0.80, at(150, 45, -30), at(0, 0, 2, 1.2), 26],
@@ -92,9 +93,9 @@ const LOOKS = [
   [0.30, [0.0600, 0.0720, 0.080], 0.00070, 0.30, [1.10, 1.00, 0.88], 1.0, [0.46, 0.18, -0.87]],
   [0.40, [0.0950, 0.1080, 0.120], 0.00045, 0.22, [1.50, 1.36, 1.18], 1.0, [0.55, 0.22, -0.80]],
   [0.43, [0.1100, 0.1250, 0.140], 0.00026, 0.16, [1.70, 1.55, 1.35], 1.0, [0.62, 0.26, -0.68]],
-  [0.46, [0.1250, 0.1400, 0.158], 0.00020, 0.14, [1.90, 1.75, 1.55], 1.0, [0.68, 0.30, -0.55]],
-  [0.56, [0.1150, 0.1300, 0.150], 0.00015, 0.06, [2.25, 2.10, 1.90], 1.0, [0.80, 0.40, -0.10]],
-  [0.72, [0.1500, 0.1650, 0.185], 0.00012, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
+  [0.46, [0.1050, 0.1280, 0.160], 0.00016, 0.14, [1.90, 1.75, 1.55], 1.0, [0.68, 0.30, -0.55]],
+  [0.56, [0.0900, 0.1180, 0.165], 0.00010, 0.06, [2.25, 2.10, 1.90], 1.0, [0.80, 0.40, -0.10]],
+  [0.72, [0.1200, 0.1480, 0.195], 0.00010, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
   [0.87, [0.2300, 0.2450, 0.262], 0.00026, 0.55, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
   [0.91, [0.4000, 0.4150, 0.430], 0.00110, 1.40, [2.60, 2.45, 2.30], 1.0, [0.80, 0.42, 0.05]],
   [0.945, [0.660, 0.668, 0.668], 0.00500, 2.40, [2.80, 2.70, 2.55], 1.04, [0.80, 0.42, 0.05]],
@@ -181,6 +182,27 @@ void main(){
 }`;
 
 const f3 = (v) => `vec3(${v.map((x) => x.toFixed(5)).join(',')})`;
+// A Himalayan valley: peaks line both sides (Khumbu-like), two giants stand far behind the face.
+// Each is four planes through its summit: [summit, [[facing (deg, 0 = +x, 90 = +z), steepness (deg)] x4]]
+const PEAKS = [
+  [[-1080, 1180, 900], [[5, 57], [95, 50], [185, 46], [270, 52]]],
+  [[-1300, 1080, 2250], [[-10, 54], [80, 48], [175, 45], [265, 50]]],
+  [[-1150, 960, 3650], [[8, 56], [100, 47], [190, 44], [280, 49]]],
+  [[-1350, 1120, 5000], [[0, 53], [90, 47], [180, 45], [270, 50]]],
+  [[1180, 1280, 650], [[175, 58], [90, 52], [0, 46], [265, 50]]],
+  [[1320, 1100, 1950], [[190, 55], [95, 49], [5, 45], [280, 51]]],
+  [[1200, 1000, 3250], [[170, 57], [85, 48], [355, 44], [270, 50]]],
+  [[1400, 1150, 4550], [[185, 53], [95, 47], [0, 45], [275, 50]]],
+  [[-1700, 2150, -3200], [[70, 50], [150, 48], [250, 46], [340, 47]]],
+  [[1900, 1950, -2700], [[100, 49], [20, 47], [200, 45], [290, 48]]],
+];
+const peakGLSL = PEAKS.map(([s, faces]) => {
+  const q = `(p - ${f3(s)})`, n = faces.map(([yaw, st]) => {
+    const a = (yaw * Math.PI) / 180, b = (st * Math.PI) / 180;
+    return f3([Math.sin(b) * Math.cos(a), Math.cos(b), Math.sin(b) * Math.sin(a)]);
+  });
+  return `  d = smin(d, max(max(dot(${q}, ${n[0]}), dot(${q}, ${n[1]})), max(dot(${q}, ${n[2]}), dot(${q}, ${n[3]}))), 220.0);`;
+}).join('\n');
 
 const SCENE_FS = `#version 300 es
 precision highp float; precision highp sampler3D;
@@ -224,11 +246,10 @@ float iceField(vec3 p, vec3 f){
 // each octave weighted by the one above it so crests stay sharp and hollows stay smooth
 float rock(vec3 p, float lod, float nearGully, out float gully){
   vec3 q = p + (vec3(n3(p / 330.0), n3(p / 330.0 + 5.2), n3(p / 330.0 + 9.1)) - 0.5) * 60.0;
-  float big = n3(q * vec3(1.0 / 420.0, 1.0 / 1000.0, 1.0 / 420.0) + 1.3);
-  float h = 85.0 * smoothstep(0.3, 0.85, big);
-  float oct = clamp(log2(150.0 / (4.0 * max(lod, 1.0) * uPix)), 1.0, 9.0);
-  vec3 r = vec3(q.x, q.y * 0.4, q.z) / 150.0;                   // features 2.5x taller than wide
-  float amp = 46.0, wgt = 1.0, sum = 0.0;
+  float h = 0.0;
+  float oct = clamp(log2(130.0 / (4.0 * max(lod, 1.0) * uPix)), 1.0, 9.0);
+  vec3 r = vec3(q.x, q.y * 0.17, q.z) / 130.0;                  // six times taller than wide: ribs and couloirs, Himalayan flutes
+  float amp = 27.0, wgt = 1.0, sum = 0.0;                        // modest: the peaks' big lines must read
   gully = 0.0;
   for (int i = 0; i < 9; i++){
     float fw = clamp(oct - float(i), 0.0, 1.0);
@@ -239,7 +260,7 @@ float rock(vec3 p, float lod, float nearGully, out float gully){
     sum += amp * n * fw;
     if (i == 1) gully = 1.0 - clamp(sum / 40.0, 0.0, 1.0);
     amp *= 0.5;
-    r = (i < 2 ? vec3(r.x * 0.8 - r.z * 0.6, r.y, r.x * 0.6 + r.z * 0.8) : ROT * r) * 2.03 + vec3(1.7, 3.1, 0.4);
+    r = vec3(r.x * 0.8 - r.z * 0.6, r.y, r.x * 0.6 + r.z * 0.8) * 2.03 + vec3(1.7, 3.1, 0.4);   // turn about the vertical only: the stretch holds
   }
   h += sum;
   return h * nearGully;
@@ -249,14 +270,22 @@ float pyramid(vec3 p, vec3 s, vec3 nf, vec3 nl, vec3 nr, vec3 nb){
   vec3 q = p - s; return max(max(dot(q, nf), dot(q, nl)), max(dot(q, nr), dot(q, nb)));
 }
 
+float peaks(vec3 p){
+  float d = 1e5;
+${peakGLSL}
+  return d;
+}
+
 float gullyOut; // set by massif(), read by shade()
 bool gAO = false;        // ambient occlusion wants true distances, not the march's safe bounds
 float massif(vec3 p, float lod){
-  // far away (the valley is kilometres long) the bare planes are a safe bound: warp + rock stay under 330 m
+  // away from rock the bare planes are a safe bound: rock relief stays under 81 m, the warp under 74 m
   float d0 = smin(smin(pyramid(p, S1, NF, normalize(vec3(-0.66, 0.62, 0.3)), normalize(vec3(0.97, 0.28, 0.2)), normalize(vec3(0.05, 0.5, -1.0))),
                        pyramid(p, vec3(-640.0, 880.0, -300.0), normalize(vec3(0.1, 0.7, 1.0)), normalize(vec3(-0.55, 0.9, 0.2)), normalize(vec3(0.7, 0.75, 0.2)), normalize(vec3(0.0, 0.7, -1.0))), 250.0),
                   pyramid(p, vec3(840.0, 690.0, -640.0), normalize(vec3(-0.15, 0.75, 1.0)), normalize(vec3(-0.8, 0.8, 0.1)), normalize(vec3(0.9, 0.7, 0.2)), normalize(vec3(0.0, 0.6, -1.0))), 280.0);
-  if (d0 > 600.0) return (d0 - 520.0) * 0.8;
+  float pk = peaks(p);                                   // the valley's peaks take no warp: their rock does the work
+  d0 = min(d0, pk);
+  if (d0 > 260.0) return (d0 - 180.0) * 0.8;
   vec3 f = faceUVW(p);
   float calm = smoothstep(0.35, 2.0, iceField(p, f));                              // the face is quiet around the climber
   // the ice field is not smooth: runnels down the fall line and wind crust, levelled (not dug out) at the climber's feet
@@ -271,8 +300,8 @@ float massif(vec3 p, float lod){
   float a = pyramid(wp, S1, NF, normalize(vec3(-0.66, 0.62, 0.3)), normalize(vec3(0.97, 0.28, 0.2)), normalize(vec3(0.05, 0.5, -1.0)));
   float b = pyramid(wp, vec3(-640.0, 880.0, -300.0), normalize(vec3(0.1, 0.7, 1.0)), normalize(vec3(-0.55, 0.9, 0.2)), normalize(vec3(0.7, 0.75, 0.2)), normalize(vec3(0.0, 0.7, -1.0)));
   float c = pyramid(wp, vec3(840.0, 690.0, -640.0), normalize(vec3(-0.15, 0.75, 1.0)), normalize(vec3(-0.8, 0.8, 0.1)), normalize(vec3(0.9, 0.7, 0.2)), normalize(vec3(0.0, 0.6, -1.0)));
-  float d = smin(smin(a, b, 250.0), c, 280.0);
-  if (d > 200.0 && !gAO) return (d - 185.0) * 0.8;                              // far from rock: cheap bound (too pessimistic for AO)
+  float d = smin(smin(smin(a, b, 250.0), c, 280.0), pk, 220.0);
+  if (d > 100.0 && !gAO) return (d - 85.0) * 0.8;                                // near rock but not at it: cheap bound (too pessimistic for AO)
   float fine = 1.0 - smoothstep(60.0, 260.0, lod);
   float snow = (1.0 - calm) * (0.18 * n3(p / 4.0) + 0.3 * n3(p / 23.0) + fine * 0.06 * n3(p / 0.5));
   // where the relief fades in, the field is steeper than a distance: shorten the step there
@@ -281,7 +310,7 @@ float massif(vec3 p, float lod){
 
 float moraine(vec2 xz){ float d = (xz.y - 3470.0 - 60.0 * sin(xz.x / 260.0)) / 150.0; return 36.0 * exp(-d * d); }
 float rise(float z){ float s = smoothstep(2900.0, 300.0, z); return 150.0 * s * s; }
-float groundA(vec2 xz){ return -0.075 * max(xz.y - 250.0, 0.0) + 2.5 * sin(xz.x / 37.0 + 1.3) * sin(xz.y / 53.0) + 1.8 * sin(xz.y / 91.0 + xz.x / 140.0) + moraine(xz) + rise(xz.y); }
+float groundA(vec2 xz){ return -${DEEP.toFixed(1)} - 0.075 * max(xz.y - 250.0, 0.0) + 2.5 * sin(xz.x / 37.0 + 1.3) * sin(xz.y / 53.0) + 1.8 * sin(xz.y / 91.0 + xz.x / 140.0) + moraine(xz) + rise(xz.y); }
 // the glacier: a tongue from the foot of the face, widening into its basin, snout above the moraine
 float glacier(vec2 xz){
   float u = (xz.x - 40.0 - 90.0 * sin(xz.y / 700.0)) / mix(520.0, 260.0, smoothstep(400.0, 2200.0, xz.y));
@@ -310,14 +339,12 @@ float ground(vec2 xz, float lod){
   // and spurs climbing to it on either side of the glacier, so the wall never stands on a plain
   float side = max(abs(xz.x - 60.0) - mix(380.0, 750.0, smoothstep(600.0, 4500.0, xz.y)), 0.0);
   float far = 1.0 - smoothstep(-2000.0, -600.0, xz.y);
-  float foot = smoothstep(2000.0, 150.0, xz.y);
-  foot *= foot * (1.0 - 0.8 * (1.0 - smoothstep(0.4, 1.6, abs(glacierU(xz)))));   // lower along the glacier's line
   vec3 q = vec3(xz.x, 11.0, xz.y) / 1700.0; q += (vec3(n3(q * 0.7), 0.0, n3(q * 0.7 + 4.0)) - 0.5) * 0.8;
-  if (side > 0.0 || far > 0.0 || foot > 0.001){
+  if (side > 0.0 || far > 0.0){
     float rg = 0.0, a = 1.0;
     for (int i = 0; i < 5; i++){ float n = 1.0 - abs(2.0 * n3(q) - 1.0); rg += a * n; a *= 0.48; q = ROT * q * 2.03; }
     rg /= 1.9;
-    h += smoothstep(0.0, 1200.0, side) * (420.0 + 800.0 * rg * rg) + far * (300.0 + 900.0 * rg * rg) + foot * (120.0 + 380.0 * rg * rg);
+    h += smoothstep(0.0, 1200.0, side) * (60.0 + 200.0 * rg * rg) + far * (300.0 + ${DEEP.toFixed(1)} + 900.0 * rg * rg) ;
   }
   if (xz.y < 3300.0){
     // above the moraine: the glacier and its lateral moraines, hills rising to the valley walls, an apron at the face
@@ -325,7 +352,9 @@ float ground(vec2 xz, float lod){
     float hills = 80.0 * vn3(vec3(xz.x, 1.0, xz.y) / 650.0) * smoothstep(3300.0, 2900.0, xz.y) * (0.7 + 0.3 * smoothstep(150.0, 600.0, abs(xz.x - 60.0)));
     float lat = (u - 1.15) / 0.22;
     float apron = smoothstep(800.0, 100.0, xz.y);
-    h += 50.0 * g + 42.0 * exp(-lat * lat) * along + hills * (1.0 - g) + 60.0 * apron * apron + cones(xz);
+    float med = 1.0 - abs(2.0 * fract((xz.x - 90.0 * sin(xz.y / 700.0)) / 160.0 + 0.3 * vn3(vec3(xz.x, 2.0, xz.y) / 400.0)) - 1.0);
+    h += 50.0 * g + 42.0 * exp(-lat * lat) * along + hills * (1.0 - g) + 60.0 * apron * apron
+       + g * (14.0 * med * med + 9.0 * vn3(vec3(xz.x, 4.0, xz.y) / 60.0));   // medial moraines and debris hummocks
     h += relief(xz, lod) * (1.0 - 0.9 * g);
   } else h += relief(xz, lod);
   return h;
@@ -440,16 +469,32 @@ vec3 shade(vec3 p, vec3 rd, float t, float mat){
     float v = n3(p / 23.0), w = n3(p / 5.0), fine = n3(p / 1.3);
     vec3 rk = vec3(0.050, 0.052, 0.057) * (0.6 + 0.8 * v) * mix(vec3(1.0), vec3(1.1, 1.0, 0.9), n3(p / 170.0));
     rk = mix(rk, vec3(0.5, 0.53, 0.58), 0.35 * smoothstep(0.35, 0.65, n.y + 0.4 * (fine - 0.5)));   // dusting
-    float snow = smoothstep(0.56, 0.72, n.y + 0.28 * (w - 0.5) + 0.1 * (v - 0.5));                 // ledges
-    snow = max(snow, smoothstep(0.62, 0.86, gully + 0.25 * (w - 0.5)) * smoothstep(0.18, 0.4, n.y)); // gullies
+    // Himalayan faces: snow and ice hold up to ~60 degrees, streaked down the fall line by spindrift
+    // flutes, cut by dark rock bands where the strata are steep
+    // snow settles on the form, not on every facet: judge it with a normal blurred to a coarser level
+    vec3 nb = t < 3000.0 ? normal(p, t * 5.0) : n;
+    float snow = smoothstep(0.3, 0.5, nb.y + 0.22 * (w - 0.5) + 0.12 * (v - 0.5));
+    snow = max(snow, smoothstep(0.62, 0.86, gully + 0.25 * (w - 0.5)) * smoothstep(0.12, 0.32, nb.y)); // couloirs
+    float flute = n3(vec3(p.x / 5.0, p.y / 70.0, p.z / 5.0)) * 0.6 + n3(vec3(p.x / 17.0, p.y / 240.0, p.z / 17.0)) * 0.4;
+    float steep = 1.0 - smoothstep(0.45, 0.7, nb.y);
+    snow *= 1.0 - 0.5 * steep * smoothstep(0.55, 0.3, flute);
+    float band = smoothstep(0.62, 0.7, fract((p.y + 45.0 * n3(p / 280.0)) / 130.0)) * smoothstep(0.4, 0.62, n3(p / 120.0 + 7.0));
+    snow *= 1.0 - 0.85 * band * steep;
     snow = max(snow, (1.0 - smoothstep(0.55, 1.05, iceField(p, f))) * smoothstep(0.08, 0.4, n.y + 0.3 * (w - 0.5)));   // the ice field, rock showing where steep
     float gy = p.y - ground(p.xz, t);
     snow = max(snow, (1.0 - smoothstep(10.0, 90.0, gy)) * smoothstep(0.08, 0.4, n.y) * (1.0 - smoothstep(420.0, 560.0, p.y)));   // the apron at the foot of the face
-    // the valley floor is moraine: scree shows through the snow in wind-scoured patches
-    float onGround = (1.0 - smoothstep(0.0, 4.0, gy)) * smoothstep(0.82, 0.95, n.y);   // the floor, not the walls
-    snow *= 1.0 - onGround * 0.75 * smoothstep(0.5, 0.66, n3(p / 52.0) * 0.65 + n3(p / 9.0) * 0.35);
-    rk = mix(rk, vec3(0.17, 0.162, 0.152) * (0.7 + 0.6 * fine), onGround * 0.7);
-    alb = mix(rk, vec3(0.76, 0.80, 0.87) * (0.88 + 0.16 * w), snow);
+    // below the peaks the valley is Himalayan: a debris-covered glacier striped by medial moraines,
+    // scree on the lateral moraines; snow lies on it in patches, more of it higher up
+    float onGround = 1.0 - smoothstep(0.0, 4.0, gy);
+    if (onGround > 0.0){
+      float stripe = smoothstep(0.35, 0.75, sin((p.x - 90.0 * sin(p.z / 700.0)) / 26.0 + 4.0 * n3(p / 170.0)) * 0.5 + 0.5);
+      vec3 debris = mix(vec3(0.21, 0.195, 0.175), vec3(0.11, 0.10, 0.095), stripe) * (0.7 + 0.6 * fine);
+      float cover = smoothstep(0.5, 0.68, n3(p / 45.0) * 0.6 + n3(p / 8.0) * 0.4 + 0.35 * (n.y - 0.85) + (p.y - 650.0) / 900.0);
+      rk = mix(rk, debris, onGround);
+      snow = mix(snow, cover, onGround);
+    }
+    vec3 snowCol = mix(vec3(0.76, 0.80, 0.87), vec3(0.58, 0.66, 0.76), steep * 0.6) * (0.88 + 0.16 * w);   // steep snow is ice, bluer
+    alb = mix(rk, snowCol, snow);
     spec = snow * 0.03; snowAmt = snow;
   } else if (mat < 1.5) alb = vec3(0.52, 0.2, 0.04);       // jacket, the club's rope colour
   else if (mat < 2.5) alb = vec3(0.035, 0.04, 0.05);
@@ -465,7 +510,7 @@ vec3 shade(vec3 p, vec3 rd, float t, float mat){
   }
   float dif = max(dot(n, uSunDir), 0.0);
   float occ = t < 3500.0 ? ao(p, n, t) : 1.0;
-  float sh = dif > 0.001 ? (uQuality > 1 && t < 2600.0 ? shadow(p + n * max(0.02, t * 0.002), uSunDir, t) : occ) : 0.0;
+  float sh = dif > 0.001 ? (uQuality > 1 && t < 1800.0 ? shadow(p + n * max(0.02, t * 0.002), uSunDir, t) : occ) : 0.0;
   vec3 sky = uFogCol * 2.2 + vec3(0.02, 0.03, 0.05);
   vec3 lin = uSunCol * dif * sh
            + sky * (0.55 + 0.45 * n.y) * occ

@@ -48,9 +48,11 @@ Real: coordinates, summit heights, stations and huts, the terrain, the routes' s
 ## The intro
 
 It plays on load and on every reload; walking back to Home from another page in the same visit goes
-straight to the title card. Fog, then down through the cloud base into a valley between mountains: its
-walls close in toward its head, where the north face (one continuous mass) stands above a glacier, its
-foot rising in buttresses and snow cones (never a plain). The camera cranes up the valley to the face. It finds the climber on an ice
+straight to the title card. Fog at altitude; as it clears the camera glides, never dropping, up a deep
+Himalayan-style gorge lined with pyramidal peaks (`PEAKS` in `intro.js`: four planes each, sharing the
+face's rock: ribs and couloirs down the fall line, snow and ice to ~60°, spindrift flutes, rock bands),
+with a debris-covered glacier at the bottom and two giants far behind. At its head the north face (one
+continuous mass) rises from the gorge. It finds the climber on an ice
 field, travels beside the wall and never closes in; scroll maps to story time through `story()` in
 `intro.js`;
 a cloud bank rolls over, contrast and depth go, the fog itself turns into the page's paper, and the
