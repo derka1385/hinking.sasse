@@ -47,7 +47,55 @@
         ],
         "createdAt": "2026-09-28T15:32:29.301Z",
         "reason": "model judgment: the only hit is details::details-content height with interpolate-size, the standard disclosure animation; one element, on click only"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-15T19:27:50.659Z",
+        "reason": "Agent: static scanner misreads inherited paper text and evaluates the invisible intro end-card against the initial dark frame; entrance text contrast is at least 4.98:1 and the end-card appears on paper."
+      },
+      {
+        "rule": "clipped-overflow-container",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-15T19:27:50.679Z",
+        "reason": "Agent: existing photo and intro frames deliberately crop visual media; neither holds a tooltip, menu or popover."
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-16T09:29:18.832Z",
+        "reason": "User requested photos that fade in only on hover, under the discipline colour. The two entrance photos intentionally start at opacity zero and reveal on hover, keyboard focus or touch press."
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "apply/index.html",
+          "committee/index.html"
+        ],
+        "createdAt": "2026-10-27T09:20:08.269Z",
+        "reason": "User confirmed the existing Hiking Club identity. Paper #F4F2EE is the established brand token."
+      },
+      {
+        "rule": "organic-clip-path",
+        "value": "*",
+        "files": [
+          "apply/index.html",
+          "committee/index.html"
+        ],
+        "createdAt": "2026-10-27T09:20:08.285Z",
+        "reason": "Agent: inherited ridge polygon from shared site.css. Recruitment pages opt out of cross-document view transitions, so this mask is not used."
       }
     ]
-  }
+  },
+  "buildPath": "code"
 }

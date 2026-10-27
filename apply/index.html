@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Apply to the committee — Hiking Club</title>
+<meta name="description" content="Apply to the Hiking Club committee at SSE. Explore the roles and tell us where you would like to contribute.">
+<meta name="theme-color" content="#F4F2EE">
+<link rel="icon" href="../site/assets/img/logo-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../site/assets/css/site.css?v=entry-choice-3">
+<link rel="stylesheet" href="../site/assets/css/committee.css?v=1">
+<script defer src="../site/assets/js/committee-apply.js?v=1"></script>
+</head>
+<body class="recruit-page">
+<a class="recruit-skip" href="#application">Skip to the application</a>
+<header class="recruit-header">
+  <a class="recruit-brand" href="../" aria-label="Hiking Club, home"><img src="../site/assets/img/logo-mark.svg" width="32" height="26" alt=""><img src="../site/assets/img/logo-wordmark.svg" width="146" height="14" alt="Hiking Club"></a>
+  <a class="recruit-back" href="../">Back to the club <span aria-hidden="true">↗</span></a>
+</header>
+<main class="application-shell">
+  <div class="application-intro">
+    <h1>Join the<br><em>committee.</em></h1>
+    <p>Help shape what comes next for Hiking Club. Tell us a little about yourself and where you would like to contribute.</p>
+  </div>
+  <noscript><p class="notice">Please enable JavaScript to complete and send this application.</p></noscript>
+  <div id="application-message" class="form-message" role="status" aria-live="polite" tabindex="-1"></div>
+  <form id="application" action="/api/committee/apply" method="post">
+    <fieldset class="form-section">
+      <legend>About you</legend>
+      <div class="form-grid">
+        <label>First name<input name="firstName" autocomplete="given-name" maxlength="80" required></label>
+        <label>Last name<input name="lastName" autocomplete="family-name" maxlength="80" required></label>
+        <label class="span-all">Email<input name="email" type="email" autocomplete="email" maxlength="254" required><span class="field-hint">The committee will use this address to contact you about your application.</span></label>
+        <label class="span-all">Programme &amp; year<select name="programme" required><option value="">Choose your programme and year</option><option>BSc 1st year</option><option>BSc 2nd year</option><option>BSc 3rd year</option><option>MSc</option></select></label>
+      </div>
+    </fieldset>
+    <fieldset class="form-section">
+      <legend>Your experience</legend>
+      <p class="section-help">Have you organised activities, helped run a club, hiked or explored the mountains? Experience is welcome, and so is a willingness to learn.</p>
+      <fieldset class="choice-group">
+        <legend>Do you have relevant previous experience?</legend>
+        <div class="inline-choices"><label><input type="radio" name="hasExperience" value="yes" required>Yes</label><label><input type="radio" name="hasExperience" value="no">Not yet</label></div>
+      </fieldset>
+      <label>Tell us a little more<textarea name="experience" rows="5" maxlength="5000" aria-describedby="experience-hint"></textarea><span class="field-hint" id="experience-hint">Share any relevant experience. If you are new to this, you can tell us what you would like to learn.</span></label>
+    </fieldset>
+    <fieldset class="form-section">
+      <legend>Where would you like to contribute?</legend>
+      <fieldset class="choice-group">
+        <legend>What are you interested in?</legend>
+        <p class="field-hint">Choose one or both.</p>
+        <div class="inline-choices"><label><input type="checkbox" name="interests" value="Hiking">Hiking</label><label><input type="checkbox" name="interests" value="Mountaineering">Mountaineering</label></div>
+      </fieldset>
+      <fieldset class="choice-group roles-fieldset">
+        <legend>Which roles would you like to apply for?</legend>
+        <p class="field-hint">You can choose more than one role.</p>
+        <div id="role-options" class="role-options" aria-busy="true"><p>Loading roles…</p></div>
+      </fieldset>
+    </fieldset>
+    <div class="form-end">
+      <label class="consent-check"><input name="contactConsent" type="checkbox" required><span>I agree that the Hiking Club committee may contact me about this application.</span></label>
+      <div class="form-honeypot" aria-hidden="true"><label>Website, leave blank<input name="website" tabindex="-1" autocomplete="off"></label></div>
+      <button class="recruit-button" type="submit" disabled>Send application <span aria-hidden="true">→</span></button>
+      <p class="field-hint">Your answers are shared with the committee for recruitment.</p>
+    </div>
+  </form>
+  <section id="application-success" class="application-success" hidden tabindex="-1">
+    <h2>Thank you for stepping forward.</h2>
+    <p>Your application has been saved for the committee to review.</p>
+    <p class="application-reference"></p>
+    <a class="recruit-button" href="../">Back to Hiking Club</a>
+  </section>
+</main>
+<footer class="recruit-footer"><span>Hiking Club · SASSE</span><a href="../committee/">Committee access</a></footer>
+</body>
+</html>

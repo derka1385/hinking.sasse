@@ -1,0 +1,6 @@
+Use case: photorealistic-natural
+Asset type: seamless square albedo texture for close-up triplanar mapping onto a Kebnekaise mountain face in a real-time WebGL cinematic website.
+Primary request: an orthographic material scan of weathered Scandinavian gneiss and schist, informed by the site's real Kebnekaise ridge photograph. Cold neutral grey-brown stone with slight olive-taupe mineral variation; thin irregular fractures, subtle foliated bands, fine broken mineral grains, rare small pale quartz inclusions. Surface-scale details should remain believable from a few metres away, with broader low-frequency tonal variation and fine high-frequency mineral texture. Rock must fill the entire square edge to edge and tile seamlessly on all four boundaries, with no obvious repeated motifs.
+Composition/framing: straight-on flat texture sample, no perspective or horizon; one continuous natural rock surface.
+Lighting/mood: evenly lit overcast material scan; diffuse albedo only, no directional cast shadows or baked highlights, no dramatic lighting.
+Constraints: one square high-resolution image, preferably at least 1536 × 1536. Natural photograph-like texture, restrained saturation, no snow, no ice, no sky, no trees, no water, no vegetation, no landscape view, no distinct large boulders, no text, no borders, no vignette, no stylized or game-like procedural pattern.

@@ -269,12 +269,12 @@ def intro():
     <ol class="intro-chapters" aria-hidden="true">
       <li data-chapter="0"><b>01</b> Fog</li>
       <li data-chapter="0.42"><b>02</b> The mountain</li>
-      <li data-chapter="0.665"><b>03</b> The rope team</li>
+      <li data-chapter="0.665"><b>03</b> One climber</li>
       <li data-chapter="0.89"><b>04</b> Cloud</li>
     </ol>
     <div class="intro-readout" aria-hidden="true"><span data-read="alt">1,750 m</span><span data-read="temp">−8 °C</span><span data-read="wind">NW 11 km/h</span></div>
     <div class="intro-alt" aria-hidden="true"><i></i></div>
-    <div class="intro-fig" aria-hidden="true"><span class="intro-fig-line"></span><span class="intro-fig-text"><b>Fig. 01</b> One climber, 1.8 m<br>North face, 1,250 m</span></div>
+    <div class="intro-fig" aria-hidden="true"><span class="intro-fig-line"></span><span class="intro-fig-text"><b>Fig. 01</b> One climber, 1.8 m<br>North face, 1,550 m</span></div>
     <div class="intro-cue" aria-hidden="true"><span>Scroll</span><i></i></div>
 
     <div class="intro-end" tabindex="-1">
@@ -392,6 +392,7 @@ def join_band(d):
   <div class="join-band-cta" data-reveal>
     <a class="btn btn-snow" href="{u(d, "join/")}">Become a member<span class="btn-arrow" aria-hidden="true">→</span></a>
     <a class="link" href="{u(d, "expeditions/")}">See the expeditions</a>
+    <a class="link" href="{u(d, "apply/")}">Apply to the committee</a>
   </div>
 </section>"""
 
@@ -723,7 +724,7 @@ def join():
     d = 1
     return (head(d, "Join — Hiking Club", "How to join Hiking Club at SASSE: who can join, what it costs, how expeditions work, and the form.", "join", ())
             + header(d, "join/") + '<main id="main">'
-            + page_head(d, "05", "Join", "Join the<br><em>club.</em>", "Open to every student of the Stockholm School of Economics with a SASSE membership. Experience optional.", "abisko")
+            + page_head(d, "05", "Join", "Join the<br><em>club.</em>", "Open to every student of the Stockholm School of Economics with a SASSE membership. Experience optional.", "abisko", '<p><a class="link" href="../apply/">Apply to the committee</a></p>')
             + f"""<section class="section join-facts" data-theme="paper" aria-label="Membership">
   {rowhead("01", "Membership", "Season 2026–27")}
   <div class="jf">

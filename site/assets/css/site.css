@@ -11,6 +11,7 @@
   --paper: #F4F2EE;
   --ink: #1D1D1B;
   --navy: #0B1B2E;
+  --pine: #0E241D;
   --slate: #526579;
   --stone: #8A8A85;
   --rope: #D98E3C;          /* one point of focus; never text on paper (2.38:1) */
@@ -67,6 +68,89 @@ figure { margin: 0; }
 .tnum { font-variant-numeric: tabular-nums; }
 .skip { position: fixed; left: var(--m); top: 12px; z-index: 100; padding: 10px 14px; background: var(--ink); color: var(--paper); transform: translateY(-160%); transition: transform .3s var(--ease); }
 .skip:focus { transform: none; }
+
+/* Shared entrance: Figma navy / pine, with quiet photographic previews. */
+.entry-choice { display: none; }
+html[data-entry="choose"] { background: var(--navy); scroll-behavior: auto; }
+html[data-entry="choose"] body > :is(.skip, .nav, #intro, main, footer) { display: none; }
+html[data-entry="choose"] .entry-choice {
+  display: grid; grid-template-columns: 1fr 1fr; position: relative;
+  min-height: 100svh; color: var(--paper); isolation: isolate;
+}
+.entry-brand {
+  position: absolute; z-index: 10; top: clamp(24px, 4.5vh, 52px); left: 50%;
+  display: flex; align-items: center; gap: 13px; color: var(--paper);
+  transform: translateX(-50%); pointer-events: none;
+}
+.entry-brand svg { fill: currentColor; flex-shrink: 0; }
+.entry-brand-mark { width: clamp(28px, 2.5vw, 36px); height: auto; animation: entry-brand-arrive .65s var(--ease) both; }
+.entry-brand-name { width: clamp(132px, 11vw, 162px); height: auto; animation: entry-brand-arrive .55s var(--ease) .07s both; }
+@keyframes entry-brand-arrive {
+  from { opacity: 0; transform: translateY(10px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+.entry-cursor { display: none; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .entry-choice.has-entry-cursor, .entry-choice.has-entry-cursor a { cursor: none; }
+  .entry-cursor {
+    display: block; position: fixed; top: 0; left: 0; width: 0; height: 0;
+    z-index: 100; color: var(--paper); pointer-events: none; opacity: 0;
+    transition: opacity .15s ease;
+  }
+  .entry-cursor.is-visible { opacity: 1; }
+  .entry-cursor-ring {
+    position: absolute; left: -15px; top: -15px; width: 30px; height: 30px;
+    border: 1px solid currentColor; border-radius: 50%;
+    transform: scale(1); transition: transform .16s var(--ease);
+  }
+  .entry-cursor-ring::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: currentColor; opacity: 0; transition: opacity .16s ease;
+  }
+  .entry-cursor-dot { position: absolute; left: -1.5px; top: -1.5px; width: 3px; height: 3px; background: currentColor; border-radius: 50%; }
+  .entry-cursor.is-over .entry-cursor-ring { transform: scale(1.35); }
+  .entry-cursor.is-over .entry-cursor-ring::after { opacity: .1; }
+  .entry-cursor.is-pressed .entry-cursor-ring { transform: scale(.9); }
+}
+.entry-path {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  min-width: 0; min-height: 100svh; padding: 24px 12px; color: var(--paper);
+  isolation: isolate; -webkit-tap-highlight-color: transparent;
+  transform: scaleX(1); transition: transform .5s var(--ease);
+}
+.entry-path--mountaineering { background: var(--navy); transform-origin: left center; }
+.entry-path--hiking { background: var(--pine); transform-origin: right center; border-left: 1px solid rgb(244 242 238 / .12); }
+.entry-path-visual { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
+.entry-path-photo {
+  position: absolute; left: -14%; top: 0; width: 128%; max-width: none; height: 100%;
+  object-fit: cover; object-position: 50% 50%; opacity: 0; transform: scaleX(1);
+  transition: opacity .5s ease, transform .5s var(--ease);
+}
+.entry-path--hiking .entry-path-photo { object-position: 50% 65%; }
+.entry-path h2 {
+  position: relative; color: var(--paper);
+  font: 300 clamp(16px, 5vw, 88px)/1.1 var(--serif); letter-spacing: -.035em;
+  text-align: center; transform: scaleX(1); transition: transform .5s var(--ease);
+}
+.entry-path:focus-visible { outline: 2px solid var(--paper); outline-offset: -10px; }
+.entry-path:is(:focus-visible, :active) .entry-path-photo { opacity: .34; transition: none; }
+@media (hover: hover) and (pointer: fine) {
+  /* Scale the panels, then counter-scale their contents: no animated layout or stretched type. */
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--mountaineering:hover) .entry-path--mountaineering,
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--hiking:hover) .entry-path--hiking { transform: scaleX(1.12); }
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--mountaineering:hover) .entry-path--hiking,
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--hiking:hover) .entry-path--mountaineering { transform: scaleX(.88); }
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--mountaineering:hover) .entry-path--mountaineering :is(h2, .entry-path-photo),
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--hiking:hover) .entry-path--hiking :is(h2, .entry-path-photo) { transform: scaleX(.892857); }
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--mountaineering:hover) .entry-path--hiking :is(h2, .entry-path-photo),
+  .entry-choice:not(:has(.entry-path:focus-visible)):has(.entry-path--hiking:hover) .entry-path--mountaineering :is(h2, .entry-path-photo) { transform: scaleX(1.136364); }
+  .entry-choice:not(:has(.entry-path:focus-visible)) .entry-path:hover .entry-path-photo { opacity: .34; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-path, .entry-path h2, .entry-path-photo { transform: none !important; transition: none; }
+  .entry-brand-mark, .entry-brand-name { animation: entry-brand-fade .2s ease both; }
+}
+@keyframes entry-brand-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* ------------------------------------------------------------------ type */
 .label, .rowhead, .nav, .intro-top, .intro-chapters, .intro-readout, .intro-fig, .intro-cue, .intro-title p,
@@ -154,8 +238,8 @@ html:has(#intro) { overflow-anchor: none; }   /* the intro removes its own scrol
 .intro-end {
   position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; gap: 22px;
   color: var(--ink); outline: none; pointer-events: none;
-  --e: clamp(0, (var(--p) - .955) / .035, 1);
-  opacity: var(--e); transform: translateY(calc((1 - var(--e)) * 14px)); filter: blur(calc((1 - var(--e)) * 6px));
+  --e: clamp(0, (var(--p) - .932) / .058, 1);
+  opacity: var(--e);
 }
 .intro.is-done .intro-end { pointer-events: auto; }
 .intro-end-lockup { width: clamp(150px, 14vw, 210px); height: auto; margin-bottom: 18px; }
@@ -818,3 +902,8 @@ details[open]::details-content { height: auto; }
   .hist .label { grid-column: 1; } .hist-no { grid-column: 2; } .hist-name { grid-column: 3; } .hist .small { grid-column: 3; text-align: left; }
   .intro { height: 500vh; }
 }
+
+/* The storm becomes the paper title card; the brand resolves after the whiteout. */
+@media (prefers-reduced-motion:reduce) { .intro-end { transform:none; } }
+
+.intro-end :is(.intro-end-sasse,.intro-end-coord,.intro-end-line) { opacity:clamp(0,(var(--p) - .96)/.035,1); }

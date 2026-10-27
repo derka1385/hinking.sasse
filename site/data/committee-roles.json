@@ -1,0 +1,14 @@
+{
+  "programmes": ["BSc 1st year", "BSc 2nd year", "BSc 3rd year", "MSc"],
+  "interests": ["Hiking", "Mountaineering"],
+  "roles": [
+    {"id":"head-hiking-mountaineering","name":"Head of Hiking & Mountaineering","description":"Leads the development of hiking and mountaineering activities, from local hikes to more ambitious mountain adventures."},
+    {"id":"head-trips-expeditions","name":"Head of Trips & Expeditions","description":"Plans and coordinates major trips, including destinations, itineraries, accommodation and participant registration."},
+    {"id":"hiking-trail-coordinator","name":"Hiking & Trail Coordinator","description":"Organises regular hikes around Stockholm, selects routes and ensures activities are accessible to different experience levels."},
+    {"id":"logistics-equipment","name":"Logistics & Equipment Coordinator","description":"Manages transportation, equipment rentals and practical arrangements for hikes and expeditions."},
+    {"id":"head-finance","name":"Head of Finance","description":"Oversees budgets, expenses, reimbursements and financial planning for club activities."},
+    {"id":"partnerships-sponsorship","name":"Partnerships & Sponsorship Manager","description":"Develops collaborations with outdoor brands, local organisations and potential sponsors to support club activities."},
+    {"id":"social-media","name":"Social Media Manager","description":"Promotes club activities, manages social media and creates engaging content to grow the hiking community at SSE."},
+    {"id":"hiking-photographer","name":"Hiking Photographer & Content Creator","description":"Documents hikes and expeditions through photography and video, working alongside the Social Media Manager."}
+  ]
+}

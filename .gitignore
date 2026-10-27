@@ -14,3 +14,23 @@ site/tools/raw/
 .impeccable/hook.cache.json
 
 __pycache__/
+
+# Recruitment runtime data and credentials must stay outside the public project.
+.env
+.env.*
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Local code graph and generated caches; keep them available without publishing them.
+graphify-out/
+
+# Keep Blender sources, but leave multi-gigabyte scenes and generated renders local.
+site/blender/**
+!site/blender/**/
+!site/blender/**/*.py
+!site/blender/**/*.mjs
+!site/blender/**/README.md
+
+# Never publish local recruitment credentials if copied into the checkout.
+admin-password.txt

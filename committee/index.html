@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Committee workspace — Hiking Club</title>
+<link rel="icon" href="../site/assets/img/logo-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../site/assets/css/site.css?v=entry-choice-3">
+<link rel="stylesheet" href="../site/assets/css/committee.css?v=1">
+<script defer src="../site/assets/js/committee-admin.js?v=1"></script>
+</head>
+<body class="recruit-page admin-page">
+<a class="recruit-skip" href="#workspace">Skip to workspace</a>
+<header class="recruit-header">
+  <a class="recruit-brand" href="../" aria-label="Hiking Club, home"><img src="../site/assets/img/logo-mark.svg" width="32" height="26" alt=""><img src="../site/assets/img/logo-wordmark.svg" width="146" height="14" alt="Hiking Club"></a>
+  <div class="header-actions"><a href="../apply/">Application form</a><button class="text-button" id="logout" type="button" hidden>Sign out</button></div>
+</header>
+<main id="workspace" class="workspace-shell">
+  <section id="login-view" class="login-view">
+    <h1>Committee<br><em>workspace.</em></h1>
+    <p>Sign in to review applications and plan interviews.</p>
+    <form id="login-form"><label>Password<input type="password" name="password" autocomplete="current-password" required></label><button class="recruit-button" type="submit">Sign in</button><p class="form-message" id="login-message" role="status" aria-live="polite"></p></form>
+  </section>
+  <section id="admin-view" hidden>
+    <div class="workspace-heading"><h1>Committee workspace</h1><button id="refresh" class="secondary-button" type="button">Refresh</button></div>
+    <div id="admin-message" class="form-message" role="status" aria-live="polite" tabindex="-1"></div>
+    <div id="email-notice" class="notice" hidden></div>
+    <nav class="workspace-tabs" aria-label="Workspace"><button type="button" data-panel="applications" aria-current="page">Applications</button><button type="button" data-panel="agenda">Interview agenda</button><button type="button" data-panel="settings">Email settings</button></nav>
+    <section id="panel-applications" class="workspace-panel">
+      <div class="applications-summary" id="applications-summary"></div>
+      <form id="filters" class="filter-grid" role="search"><label>Search<input name="search" type="search" placeholder="Name or email"></label><label>Role<select name="role"><option value="">All roles</option></select></label><label>Status<select name="status"><option value="">All statuses</option><option value="new">New</option><option value="reviewed">Reviewed</option><option value="shortlisted">Shortlisted</option><option value="interview">Interview scheduled</option><option value="accepted">Accepted</option><option value="not-selected">Not selected</option></select></label><label>Programme<select name="programme"><option value="">All programmes</option><option>BSc 1st year</option><option>BSc 2nd year</option><option>BSc 3rd year</option><option>MSc</option></select></label><button class="secondary-button" type="submit">Filter</button></form>
+      <div id="application-list" class="application-list"></div>
+      <div class="pagination"><button id="previous-page" class="text-button" type="button">Previous</button><span id="page-count"></span><button id="next-page" class="text-button" type="button">Next</button></div>
+      <section id="application-detail" class="application-detail" hidden tabindex="-1"></section>
+    </section>
+    <section id="panel-agenda" class="workspace-panel" hidden>
+      <div class="panel-heading"><div><h2>Interview agenda</h2><p>Times are shown in Stockholm time.</p></div><a class="secondary-button" href="/api/committee/calendar.ics" download="hiking-club-interviews.ics">Export calendar</a></div>
+      <div id="agenda-list" class="agenda-list"></div>
+      <section class="planner-section">
+        <h2>Build an interview session</h2>
+        <p class="section-help">Prepare one slot per shortlisted applicant who does not already have an interview. Filter by role to group the conversations. Nothing is booked until you confirm the preview.</p>
+        <form id="planner-form" class="form-grid">
+          <label>Start · Stockholm time<input type="datetime-local" name="localStart" required></label><label>End · Stockholm time<input type="datetime-local" name="localEnd" required></label>
+          <label>Interview length · minutes<input name="duration" type="number" value="20" min="10" max="120" required></label><label>Break · minutes<input name="breakMinutes" type="number" value="5" min="0" max="60" required></label>
+          <label>Role<select name="roleId"><option value="">All applied roles</option></select></label><label>Interviewer or panel<input name="interviewer" value="Committee" maxlength="120" required></label>
+          <label class="span-all">Location or meeting link<input name="location" maxlength="500"></label><div class="span-all"><button class="recruit-button" type="submit">Preview agenda</button></div>
+        </form>
+        <div id="plan-preview" class="plan-preview" hidden></div><button id="confirm-plan" class="recruit-button" type="button" hidden>Confirm interview schedule</button>
+      </section>
+    </section>
+    <section id="panel-settings" class="workspace-panel settings-panel" hidden>
+      <h2>Email notifications</h2><p class="section-help">Applications are saved even before email delivery is connected. Once SMTP is configured, the queued notifications will be sent automatically.</p>
+      <form id="settings-form" class="form-grid">
+        <label class="span-all">Committee notification inbox<input name="notification_email" type="email" required><span class="field-hint">You can change this address. New applications will use the new inbox.</span></label>
+        <label class="span-all">Website URL<input name="public_url" type="url" required><span class="field-hint">Used for the private review link in notification emails.</span></label>
+        <label>SMTP host<input name="smtp_host" autocomplete="off" placeholder="smtp.example.com"></label><label>SMTP port<input name="smtp_port" type="number" min="1" max="65535" value="587" required></label>
+        <label>Encryption<select name="smtp_security"><option value="starttls">STARTTLS</option><option value="ssl">SSL / TLS</option></select></label><label>Sender email<input name="smtp_sender" type="email" autocomplete="off"></label>
+        <label>SMTP username<input name="smtp_username" autocomplete="off"></label><label>SMTP password<input name="smtp_password" type="password" autocomplete="new-password"><span class="field-hint" id="password-hint">Leave blank to keep the saved password.</span></label>
+        <div class="span-all"><button class="recruit-button" type="submit">Save email settings</button></div>
+      </form>
+      <div class="mail-actions"><button id="test-email" class="secondary-button" type="button">Send a test email</button><button id="retry-email" class="text-button" type="button">Retry failed notifications</button></div>
+      <p id="mail-summary" class="section-help"></p>
+    </section>
+  </section>
+</main>
+<footer class="recruit-footer"><span>Hiking Club · Committee workspace</span><a href="../">Back to the website</a></footer>
+</body>
+</html>

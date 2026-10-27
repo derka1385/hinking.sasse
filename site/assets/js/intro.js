@@ -1,12 +1,14 @@
-// The ascent: fog, a valley, one continuous north face, a climber, then the page.
-// Raw WebGL2, no library. One raymarched full-screen pass (terrain, rock, climber, fog,
-// clouds) and one instanced pass for snow. Scroll never gets hijacked: the camera follows it, damped.
-(() => {
+// The ascent: mountain approach, a wind-driven whiteout, then the club title card.
+// Raw WebGL2: the approved Khumbu relief and published fog/cloud/snow passes,
+// with local summit detail, spindrift and a scroll-linked vector logo handoff.
+(async () => {
 
+const root = document.documentElement;
+// Keep the terrain fetch and WebGL allocation asleep until an experience is chosen.
+if (root.dataset.entry === 'choose') return;
 const section = document.getElementById('intro');
 const stage = section.querySelector('.intro-stage');
 const canvas = section.querySelector('canvas');
-const root = document.documentElement;
 
 const params = new URLSearchParams(location.search);
 const requestedP = Number(params.get('p'));
@@ -31,6 +33,16 @@ if (!play || reduced) { markDone(); return; }   // reduced motion: straight to t
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 scrollTo({ top: 0, behavior: 'instant' });
 
+const loadingSkip = (e) => { e.preventDefault(); done = true; markDone(); };
+const skipButton = section.querySelector('.intro-skip');
+skipButton?.addEventListener('click', loadingSkip);
+let model;
+try { model = await window.HCKhumbu.load('site/assets/mountain/'); }
+catch (error) { console.error('Mountain intro unavailable', error); markDone(); return; }
+
+if (done) return;
+skipButton?.removeEventListener('click', loadingSkip);
+
 // ---------------------------------------------------------------- math
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const smooth = (t) => t * t * (3 - 2 * t);
@@ -53,6 +65,7 @@ const TX = [1, 0, 0];                     // across the face
 const TY = V.cross(NF, TX);               // up the face
 const RAISE = 60;                         // a broad crest above the shoulder, not a lone needle
 const SUMMIT = V.add([80, 1150, -320], V.mul(TY, RAISE));
+model.register(SUMMIT);
 const CU = -20, CV = -640 - RAISE;        // climber, in face coordinates: on an ice field in the face
 const PEAKS = [
   [[-1530, 960, 520], [[-12, 37], [82, 35], [176, 38], [262, 33]]],
@@ -84,46 +97,35 @@ const baseShape = (p) => {
   return smin(smin(smin(a, b, 340), c, 390), pk, 360);
 };
 const LIFT = 4.5;                          // the couloirs sit level with the rock around them (its mean relief)
-const onSnow = (v) => {                    // from the face plane, out along its normal to the couloir's surface
-  let lo = -40, hi = 160;
-  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (baseShape(V.add(v, V.mul(NF, m))) > LIFT + 0.25) hi = m; else lo = m; }
+const onSnow = (v) => {                    // attach the original rope teams to the approved mesh
+  let lo = -800, hi = 2400;
+  for (let i = 0; i < 40; i++) {
+    const m = (lo + hi) / 2, p = V.add(v, V.mul(NF, m));
+    if (p[1] > model.heightAt(p[0], p[2]) + 0.25) hi = m; else lo = m;
+  }
   return V.add(v, V.mul(NF, (lo + hi) / 2));
 };
-const CLIMBER = onSnow(V.add(SUMMIT, V.add(V.mul(TX, CU), V.mul(TY, CV))));
+const CLIMBER = [SUMMIT[0], model.heightAt(SUMMIT[0], SUMMIT[2]) + 0.04, SUMMIT[2]];
 // The valley floor is analytic so the camera can skim it (the shader uses the same functions).
 const moraine = (x, z) => { const d = (z - 3470 - 60 * Math.sin(x / 260)) / 150; return 36 * Math.exp(-d * d); };   // closes the valley
 const rise = (z) => { const t = clamp((2900 - z) / 2600); const s = t * t * (3 - 2 * t); return 150 * s * s; };      // the foreland climbing to the face
 const DEEP = 300;                         // the valley is a gorge: its floor sits deep between the peaks
-const groundAt = (x, z) => -DEEP - 0.075 * Math.max(z - 250, 0) + 2.5 * Math.sin(x / 37 + 1.3) * Math.sin(z / 53) + 1.8 * Math.sin(z / 91 + x / 140) + moraine(x, z) + rise(z);
+const groundAt = (x, z) => model.heightAt(x, z);
 const at = (n, x, y, up = 0) => V.add(V.add(V.add(CLIMBER, V.mul(NF, n)), V.add(V.mul(TX, x), V.mul(TY, y))), [0, up, 0]);
-const LOOK = V.add(CLIMBER, [0, 1.1, 0]);
-// Two rope teams of three climb snow couloirs in the face: ours (the hero leads, two seconds below on
-// the rope) and a party higher up, a line of dots from the valley. 14 m of rope between climbers.
+const LOOK = V.add(CLIMBER, [1.125, 1.5, 0]);
+// Legacy face coordinates stay available to the archived shader helpers.
 const DOWN = V.norm(V.sub([0.12, 0, 0], TY));
 const LEAD2 = V.add(SUMMIT, V.add(V.mul(TX, 130), V.mul(TY, -360)));
-const TEAM = [CLIMBER, LEAD2].flatMap((l) => [0, 14, 28].map((k) => onSnow(V.add(l, V.mul(DOWN, k)))));
+const TEAM = Array.from({ length: 6 }, () => CLIMBER); // legacy coordinates; no foreground figure is rendered
 const faceUV = (v) => { const q = V.sub(v, SUMMIT); return [V.dot(q, TX), V.dot(q, TY)]; };
 
 // Camera keys: story time (see story()), position, target, vertical fov (deg).
-// Inside the cloud at altitude; as it clears the valley opens below and the peak ahead; a level glide
-// up the valley to the wall, then the climber — small, seen from beside the
-// face, never closer — and into the cloud.
+// A level, almost straight approach: fixed lens and aim, with no ascent to the summit.
+// The cloud closes around the camera while it is still over two kilometres from the peak.
 const KEYS = [
-  [0.00, [-90, 700, 4900], [40, 860, 0], 42],
-  [0.20, [-70, 670, 4350], [40, 840, 0], 42],
-  [0.36, [-50, 640, 3800], [40, 820, 0], 41],
-  [0.455, [-35, 620, 3400], [40, 790, 0], 40],        // out of the cloud: the valley below, the peak ahead
-  [0.50, [-25, 610, 3050], [40, 760, 0], 38],
-  [0.545, [-15, 600, 2700], [45, 720, 0], 37],
-  [0.59, [-5, 590, 2300], [45, 660, -60], 35],
-  [0.635, [0, 580, 1820], [45, 610, -60], 34],
-  [0.68, at(620, -10, -120), LOOK, 30],
-  [0.74, at(320, 30, -70), LOOK, 28],
-  [0.80, at(150, 45, -30), at(0, 0, 2, 1.2), 26],
-  [0.855, at(138, -10, -8), at(0, -8, 4, 1), 26],
-  [0.905, at(132, -62, 14), at(0, -16, 12, 1), 27],
-  [0.955, at(160, -100, 50), at(40, -140, 220), 31],
-  [1.00, at(185, -125, 95), at(60, -170, 330), 33],
+  [0.00, [40, 740, 4900], [80, 1000, -340], 42],
+  [0.855, [40, 740, 1800], [80, 1000, -340], 42],
+  [1.00, [40, 740, 1800], [80, 1000, -340], 42],
 ];
 
 // Atmosphere keys: progress, fog colour (linear), fog density, cloud bank, sun colour, exposure, sun direction.
@@ -131,19 +133,15 @@ const KEYS = [
 // luminance rises, and the fog itself becomes the paper of the page.
 const LOOKS = [
   [0.00, [0.0035, 0.0085, 0.019], 0.00028, 0.12, [0.30, 0.34, 0.46], 1.0, [0.30, 0.12, -1.0]],
-  [0.07, [0.0070, 0.0125, 0.024], 0.00050, 1.00, [0.20, 0.21, 0.24], 1.0, [0.34, 0.13, -0.95]],
-  [0.13, [0.0180, 0.0250, 0.034], 0.00070, 0.80, [0.35, 0.36, 0.40], 1.0, [0.36, 0.14, -0.92]],
-  [0.20, [0.0340, 0.0440, 0.052], 0.00075, 0.38, [0.70, 0.66, 0.62], 1.0, [0.40, 0.16, -0.90]],
-  [0.30, [0.0600, 0.0720, 0.080], 0.00070, 0.30, [1.10, 1.00, 0.88], 1.0, [0.46, 0.18, -0.87]],
-  [0.40, [0.0950, 0.1080, 0.120], 0.00045, 0.22, [1.50, 1.36, 1.18], 1.0, [0.55, 0.22, -0.80]],
-  [0.43, [0.1100, 0.1250, 0.140], 0.00026, 0.16, [1.70, 1.55, 1.35], 1.0, [0.62, 0.26, -0.68]],
-  [0.46, [0.0900, 0.1040, 0.122], 0.00018, 0.16, [1.70, 1.58, 1.44], 1.0, [0.72, 0.32, -0.40]],
-  [0.56, [0.1100, 0.1250, 0.145], 0.00013, 0.06, [2.20, 2.05, 1.85], 1.0, [0.82, 0.40, -0.05]],
-  [0.72, [0.1500, 0.1650, 0.185], 0.00012, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
-  [0.87, [0.2300, 0.2450, 0.262], 0.00026, 0.55, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
-  [0.91, [0.4000, 0.4150, 0.430], 0.00110, 1.40, [2.60, 2.45, 2.30], 1.0, [0.80, 0.42, 0.05]],
-  [0.945, [0.660, 0.668, 0.668], 0.00500, 2.40, [2.80, 2.70, 2.55], 1.04, [0.80, 0.42, 0.05]],
-  [0.972, [0.960, 0.950, 0.915], 0.02500, 3.20, [3.00, 2.90, 2.75], 1.08, [0.80, 0.42, 0.05]],
+  [0.10, [0.0080, 0.0140, 0.026], 0.00060, 1.00, [0.20, 0.21, 0.24], 1.0, [0.40, 0.16, -0.9]],
+  [0.22, [0.030, 0.040, 0.055], 0.00050, 0.90, [0.45, 0.43, 0.42], 1.0, [0.60, 0.22, -0.7]],
+  [0.34, [0.070, 0.082, 0.100], 0.00024, 0.25, [1.20, 1.10, 1.00], 1.0, [0.78, 0.30, -0.45]],
+  [0.50, [0.110, 0.125, 0.145], 0.00013, 0.06, [2.20, 2.05, 1.85], 1.0, [0.82, 0.40, -0.05]],
+  [0.70, [0.150, 0.165, 0.185], 0.00012, 0.10, [2.40, 2.25, 2.05], 1.0, [0.80, 0.42, 0.05]],
+  [0.87, [0.230, 0.245, 0.262], 0.00026, 0.55, [2.50, 2.35, 2.15], 1.0, [0.80, 0.42, 0.05]],
+  [0.905, [0.400, 0.415, 0.430], 0.00110, 1.40, [2.60, 2.45, 2.30], 1.0, [0.80, 0.42, 0.05]],
+  [0.94, [0.660, 0.668, 0.668], 0.00500, 2.40, [2.80, 2.70, 2.55], 1.04, [0.80, 0.42, 0.05]],
+  [0.97, [0.960, 0.950, 0.915], 0.02500, 3.20, [3.00, 2.90, 2.75], 1.08, [0.80, 0.42, 0.05]],
   [1.00, [1.160, 1.135, 1.080], 0.09000, 3.60, [3.00, 2.90, 2.75], 1.10, [0.80, 0.42, 0.05]],
 ];
 
@@ -178,19 +176,25 @@ function story(p) {
 
 function camera(p, time) {
   if (DEBUG_CAM) { const c = DEBUG_CAM; return { pos: at(c[0], c[1], c[2], c[3]), tgt: at(c[4], c[5], c[6], c[7]), fov: c[8] }; }
-  const { i, t } = sampleKeys(KEYS, p);
-  const k = (j) => KEYS[clamp(j, 0, KEYS.length - 1)];
-  const pos = catmull(k(i - 1)[1], k(i)[1], k(i + 1)[1], k(i + 2)[1], t);
-  const tgt = catmull(k(i - 1)[2], k(i)[2], k(i + 1)[2], k(i + 2)[2], t);
-  const fov = k(i)[3] + (k(i + 1)[3] - k(i)[3]) * smooth(t);
-  const out = V.dot(V.sub(pos, CLIMBER), NF);
-  if (out < 2.5 && p > 0.7) pos.splice(0, 3, ...V.add(pos, V.mul(NF, 2.5 - out)));
-  if (p < 0.56) pos[1] = Math.max(pos[1], groundAt(pos[0], pos[2]) + 6.5);   // never below the ground
-  // handheld drift, proportional to how far we are from the climber: steady up close
-  const dist = Math.hypot(...V.sub(pos, CLIMBER));
-  const a = Math.min(dist * 0.004, 6) + 0.02;
+  const travel = smooth(clamp(p / KEYS[1][0]));
+  const pos = V.mix(KEYS[0][1], KEYS[1][1], travel);
+  const tgt = V.mix(KEYS[0][2], KEYS[1][2], travel);
+  const fov = KEYS[0][3];
+  // A small wind drift keeps idle pauses alive and settles as the cloud closes.
+  const a = 1.2 * (1 - smooth(clamp((p - .80) / .055)));
   const drift = [Math.sin(time * 0.31) + 0.5 * Math.sin(time * 0.73), Math.sin(time * 0.27 + 1) * 0.6, Math.sin(time * 0.19 + 2) * 0.4];
+  if (p < 1.01) pos[1] = Math.max(pos[1], groundAt(pos[0] + drift[0] * a, pos[2] + drift[2] * a) + 6.5 - drift[1] * a);   // clearance includes the idle drift on steep terrain
   return { pos: V.add(pos, V.mul(drift, a)), tgt, fov };
+}
+
+// Scroll controls the arrival of the bank; elapsed time keeps its turbulence alive.
+// The wind peaks before the whiteout and falls silent before the logo resolves.
+function storm(p) {
+  return {
+    bank: smooth(clamp((p - .65) / .205)),
+    gust: smooth(clamp((p - .65) / .10)) * (1 - smooth(clamp((p - .895) / .065))),
+    paper: smooth(clamp((p - .89) / .085)),
+  };
 }
 
 function look(p) {
@@ -236,11 +240,11 @@ const peakGLSL = PEAKN.map(([s, ns]) => {
 const SCENE_FS = `#version 300 es
 precision highp float; precision highp sampler3D;
 uniform sampler3D uNoise;
-uniform sampler2D uRock;
+uniform sampler2D uRock, uTerrainColor, uTerrainDistance;
 uniform vec2 uRes; uniform float uTime, uFocal, uPix;
 uniform vec3 uCam, uCamR, uCamU, uCamF;
 uniform vec3 uSunDir, uSunCol, uFogCol;
-uniform float uFogDen, uCloud, uWhite, uTMax, uExposure, uVig;
+uniform float uFogDen, uCloud, uWhite, uTMax, uExposure, uVig, uStorm, uStormWind;
 uniform vec3 uPaper;
 uniform int uSteps, uCloudSteps, uQuality;
 out vec4 outColor;
@@ -402,42 +406,8 @@ float sdCap(vec3 p, vec3 a, vec3 b, float r){ vec3 pa = p - a, ba = b - a; float
 float sdBox(vec3 p, vec3 b, float r){ vec3 q = abs(p) - b; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r; }
 
 vec2 climber(vec3 q, float t){
-  vec3 b = vec3(q.x, q.y, -q.z);
-  float swing = fract(t / 7.0); swing = swing > 0.78 ? sin(3.14159 * (swing - 0.78) / 0.22) : 0.0;
-  float kick = fract(t / 7.0 + 0.45); kick = kick > 0.8 ? sin(3.14159 * (kick - 0.8) / 0.2) : 0.0;
-  float breath = 0.006 * sin(t * 1.4);
-  vec3 eR = vec3(0.31, 1.62, 0.25) + vec3(0.0, 0.05, -0.1) * swing;
-  vec3 hR = vec3(0.24, 1.92, 0.55) + vec3(0.0, 0.10, -0.24) * swing;
-  vec3 tR = hR + mix(vec3(0.0, 0.42, 0.26), vec3(0.0, 0.32, -0.06), swing);
-  vec3 hL = vec3(-0.27, 1.60, 0.47), tL = hL + vec3(0.0, 0.40, 0.25);
-  vec3 sR = vec3(0.18, 1.44 + breath, 0.06), sL = vec3(-0.18, 1.44 + breath, 0.06);
-  vec3 kL = vec3(-0.16, 0.72, -0.03) + vec3(0.0, 0.04, -0.08) * kick, fL = vec3(-0.14, 0.40, 0.12) + vec3(0.0, 0.05, -0.12) * kick;
-  // jacket: torso, hood, arms; a few millimetres of flutter
-  float flutter = 0.005 * sin(38.0 * b.y + 9.0 * t) * sin(27.0 * b.x + 7.0 * t);
-  float jk = sdCap(b, vec3(0.0, 1.0, -0.03), vec3(0.0, 1.37 + breath, 0.05), 0.16) + flutter;
-  jk = smin(jk, sdCap(b, sR, eR, 0.058), 0.04);
-  jk = min(jk, sdCap(b, eR, hR, 0.05));
-  jk = smin(jk, sdCap(b, sL, vec3(-0.33, 1.35, 0.23), 0.058), 0.04);
-  jk = min(jk, sdCap(b, vec3(-0.33, 1.35, 0.23), hL, 0.05));
-  jk = smin(jk, sdCap(b, vec3(0.0, 1.48, 0.05), vec3(0.0, 1.56, 0.09), 0.085), 0.05);
-  // dark: trousers, boots, a slim pack, harness, gloves
-  float dk = sdBox(b - vec3(0.0, 1.25, -0.18), vec3(0.085, 0.14, 0.035), 0.05);
-  dk = min(dk, sdCap(b, vec3(0.09, 0.96, -0.07), vec3(0.14, 0.52, -0.07), 0.075));
-  dk = min(dk, sdCap(b, vec3(0.14, 0.52, -0.07), vec3(0.13, 0.13, -0.01), 0.062));
-  dk = min(dk, sdCap(b, vec3(-0.09, 0.96, -0.07), kL, 0.075));
-  dk = min(dk, sdCap(b, kL, fL, 0.062));
-  dk = min(dk, sdBox(b - vec3(0.13, 0.07, 0.03), vec3(0.042, 0.045, 0.1), 0.02));
-  dk = min(dk, sdBox(b - fL - vec3(0.0, -0.05, 0.05), vec3(0.042, 0.045, 0.1), 0.02));
-  dk = min(dk, sdCap(b, vec3(-0.15, 0.93, -0.02), vec3(0.15, 0.93, -0.02), 0.035));
-  dk = min(dk, length(b - hR) - 0.048); dk = min(dk, length(b - hL) - 0.048);
-  float hd = length(b - vec3(0.0, 1.66 + breath, 0.11)) - 0.112;             // helmet
-  float tl = min(sdCap(b, hR, tR, 0.013), sdCap(b, tR, tR + vec3(0.0, -0.05, 0.25), 0.009));
-  tl = min(tl, min(sdCap(b, hL, tL, 0.013), sdCap(b, tL, tL + vec3(0.0, -0.05, 0.25), 0.009)));
-  vec2 r = vec2(jk, 1.0);
-  if (dk < r.x) r = vec2(dk, 2.0);
-  if (hd < r.x) r = vec2(hd, 3.0);
-  if (tl < r.x) r = vec2(tl, 5.0);
-  return r;
+  // Archived flagstaff helper; the current scene does not trace foreground SDF objects.
+  return vec2(sdCap(q,vec3(0.,0.,0.),vec3(0.,3.,0.),.018),5.);
 }
 
 // a team's rope: leader's harness, slack lying on the snow, each second's harness, a tail to the anchor
@@ -451,22 +421,8 @@ float rope(vec3 p, float lod, vec3 L){
 }
 
 vec2 map(vec3 p, float lod){
-  // everything ground() adds to groundA stays under 620 m (2100 m in the far ranges): high above it, skip it
-  float gb = p.y - groundA(p.xz) - (p.z < -500.0 ? 2100.0 : 620.0);
-  float g = gb > 50.0 ? gb : p.y - ground(p.xz, lod);   // (never near the bound itself: a small bound would read as a hit)
-  vec2 r = vec2(min(massif(p, lod), g * 0.55), 0.0);   // no smin: the massif's distance is a scaled bound, a blend with it floats off the snow
-  float inflate = 0.75 * uPix * lod;                    // never thinner than a pixel: from the valley, a line of dots
-  for (int j = 0; j < 2; j++){
-    vec3 L = CLS[j * 3];
-    if (length(p - (L + DOWN * 14.0)) - 22.0 > r.x + inflate) continue;   // the whole team is far
-    for (int k = 0; k < 3; k++){
-      vec3 q = p - CLS[j * 3 + k];
-      if (length(q - vec3(0.0, 1.0, 0.0)) - 1.6 < r.x + inflate){
-        vec2 c = climber(q, uTime + float(j * 3 + k) * 2.37); c.x -= inflate; if (c.x < r.x) r = c;
-      }
-    }
-    float rp = rope(p, lod, L); if (rp < r.x) r = vec2(rp, 4.0);
-  }
+  vec2 r=climber(p-CLIMB,uTime);
+  r.x-=min(.035,.35*uPix*lod);
   return r;
 }
 
@@ -604,6 +560,30 @@ vec4 clouds(vec3 ro, vec3 rd, float tHit, vec2 fc){
   return vec4(L, T);
 }
 
+// A moving volume front crosses the view from the windward side. This adds
+// a whiteout bank without changing the published atmosphere in the approach.
+vec4 stormBank(vec3 ro, vec3 rd, float hit, vec2 fc){
+  if(uStorm<.001)return vec4(0.,0.,0.,1.);
+  float range=min(hit,180.),dt=range/float(uCloudSteps);
+  // Fixed spatial jitter avoids flashing as the camera enters the bank.
+  float t=dt*hash12(fc),T=1.;vec3 L=vec3(0.);
+  vec3 advect=vec3(uTime*24.,uTime*.8+sin(uTime*1.3)*uStormWind*1.5,uTime*3.);
+  vec3 light=mix(uFogCol*2.2+uSunCol*.035,vec3(1.24,1.25,1.26),uStorm);
+  float front=mix(130.,-75.,uStorm*uStorm);
+  for(int i=0;i<16;i++){
+    if(i>=uCloudSteps||T<.008)break;
+    vec3 pos=ro+rd*t,field=pos-advect;
+    float billow=n3(field/55.)*.57+n3(field/19.)*.29+n3(field/6.5)*.14;
+    float side=dot(pos-ro,uCamR)*.85+dot(pos-ro,uCamF)*.42;
+    float body=smoothstep(front-15.,front+15.,side+(billow-.5)*92.);
+    float density=body*(.45+billow*.9)*uStorm;
+    float a=1.-exp(-density*dt*.085);
+    vec3 lit=light*(.76+.24*billow);
+    L+=T*a*lit;T*=1.-a;t+=dt;
+  }
+  return vec4(L,T);
+}
+
 vec3 aces(vec3 x){ return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
 
 void main(){
@@ -611,35 +591,18 @@ void main(){
   vec2 uv = (2.0 * fc - uRes) / uRes.y;
   vec3 rd = normalize(uCamF * uFocal + uCamR * uv.x + uCamU * uv.y);
   vec3 ro = uCam;
-  float t = 1.0, tPrev = 1.0, mat = -1.0;
-  vec2 h;
-  float bestR = 1e9, bestT = 1.0, bestM = 0.0;             // the ray's closest pass to a surface
-  for (int i = 0; i < 220; i++){
-    if (i >= uSteps) break;
-    vec3 p = ro + rd * t;
-    if (p.y > 2300.0 && rd.y > 0.0) { t = uTMax + 1.0; break; }
-    h = map(p, t);
-    if (h.x < bestR * t){ bestR = h.x / t; bestT = t; bestM = h.y; }
-    if (h.x < 0.0006 * t){
-      mat = h.y;
-      if (h.x < 0.0){                                     // overshot a thin crest: bisect back to it
-        float a = tPrev, b = t;
-        for (int k = 0; k < 5; k++){ float m = 0.5 * (a + b); vec2 hm = map(ro + rd * m, m); if (hm.x < 0.0) { b = m; mat = hm.y; } else a = m; }
-        t = b;
-      }
-      break;
-    }
-    tPrev = t;
-    t += h.x * 0.72;
-    if (t > uTMax) break;
-  }
-  if (mat < -0.5 && t < uTMax && bestR < 0.03 && bestM < 0.5){ t = bestT; mat = bestM; }   // out of steps creeping over far terrain: that terrain, not a grey hole (not the climber)
-  vec3 col;
-  if (t < uTMax && mat > -0.5) col = shade(ro + rd * t, rd, t, mat);
-  else { t = uTMax; col = fogColor(rd); }
+  vec2 screen = fc / uRes;
+  vec4 surface = texture(uTerrainDistance, screen);
+  float coverage = surface.a;
+  float terrainT = coverage > 0.001 ? dot(surface.rgb / coverage, vec3(1.0, 1.0 / 255.0, 1.0 / 65025.0)) * 20000.0 : uTMax;
+  float limit = min(terrainT, uTMax), t = limit, mat = -1.0;
+  vec3 terrainColor = pow(texture(uTerrainColor, screen).rgb / max(coverage, 0.001), vec3(2.0)) * 4.0;
+  vec3 col = mix(fogColor(rd), terrainColor, coverage);
   col = mix(col, fogColor(rd), fogAmount(ro, rd, t));
   vec4 cl = clouds(ro, rd, t, fc);
   col = col * cl.a + cl.rgb;
+  vec4 squall=stormBank(ro,rd,t,fc);
+  col=col*squall.a+squall.rgb;
   col = aces(col * uExposure * 1.6);
   col = pow(col, vec3(1.0 / 2.2));
   col = mix(col, col * vec3(0.95, 0.985, 1.04), 1.0 - col.g);           // cold shadows
@@ -654,12 +617,12 @@ void main(){
 const SNOW_VS = `#version 300 es
 layout(location=0) in vec4 aSeed;
 uniform mat4 uVP; uniform vec3 uCam, uVel; uniform float uTime, uScale, uFocalPx, uDen;
-uniform vec2 uRes;
+uniform vec2 uRes; uniform float uGust;
 out vec2 vQ; out float vA;
 const vec3 BOX = vec3(70.0, 44.0, 70.0);
 void main(){
   vec2 corner = vec2(gl_VertexID & 1, gl_VertexID >> 1) * 2.0 - 1.0;
-  vec3 wind = vec3(4.5, -1.6, 1.2) * (0.6 + 0.8 * aSeed.w);
+  vec3 wind = vec3(4.5 + uGust*22.0, -1.6-uGust*.8, 1.2+uGust*3.) * (0.6 + 0.8 * aSeed.w);
   vec3 sway = vec3(sin(uTime * 1.3 + aSeed.x * 40.0), 0.0, cos(uTime * 1.1 + aSeed.z * 40.0)) * 0.6;
   vec3 rel = mod(aSeed.xyz * BOX + wind * uTime + sway - uCam, BOX) - BOX * 0.5;
   vec3 wp = uCam + rel;
@@ -670,8 +633,10 @@ void main(){
   float size = max((0.006 + 0.01 * aSeed.w) * uFocalPx / c0.w, 0.9 * uScale);
   float blur = 1.0 - smoothstep(0.6, 4.0, c0.w);                         // close flakes defocus
   size *= 1.0 + blur * 3.0;
-  float len = 0.0;                                   // round flakes: no motion blur on the 3D
-  vec2 s = s0 + corner * size;
+  vec2 v = s0 - s1; float len = length(v); vec2 dir = len > 1e-3 ? v / len : vec2(0.0, 1.0);
+  vec2 perp = vec2(-dir.y, dir.x);
+  vec2 off = dir * corner.y * (size + len * 0.5) + perp * corner.x * size;
+  vec2 s = (s0 + s1) * 0.5 + off;
   gl_Position = vec4(s / (uRes * 0.5) * c0.w, 0.0, c0.w);
   vQ = corner;
   vA = (0.5 + 0.5 * aSeed.w) * (1.0 - blur * 0.75) * exp(-c0.w * uDen * 18.0) * smoothstep(0.3, 1.2, c0.w) / (1.0 + len / (size * 2.0) * 0.5);
@@ -681,6 +646,38 @@ const SNOW_FS = `#version 300 es
 precision mediump float;
 in vec2 vQ; in float vA; uniform vec3 uColor; out vec4 o;
 void main(){ float d = dot(vQ, vQ); if (d > 1.0) discard; float a = vA * (1.0 - d) * (1.0 - d); o = vec4(uColor * a, a); }`;
+
+// Wind lifts powder from the summit surface. Short paths are grounded with the
+// same height sampler as the refined mesh, and terrain distance hides buried flakes.
+const SPINDRIFT_VS = `#version 300 es
+layout(location=0) in vec4 aStart; layout(location=1) in vec4 aEnd;
+uniform mat4 uVP; uniform vec3 uCam; uniform vec2 uRes;
+uniform float uTime,uFocalPx,uScale,uStrength;
+out vec2 vQ; out float vA,vDistance;
+void main(){
+  vec2 corner=vec2(gl_VertexID&1,gl_VertexID>>1)*2.-1.;
+  float phase=fract(uTime*(.35+aEnd.w*.25)+aStart.w);
+  vec3 wp=mix(aStart.xyz,aEnd.xyz,phase);
+  wp.y+=sin(phase*3.141593)*(.16+.65*aStart.w);
+  vec4 c=uVP*vec4(wp,1.),c1=uVP*vec4(wp-(aEnd.xyz-aStart.xyz)*.012,1.);
+  if(c.w<.3||c1.w<.3){gl_Position=vec4(2.,2.,2.,1.);return;}
+  vec2 s=c.xy/c.w*uRes*.5,s1=c1.xy/c1.w*uRes*.5;
+  vec2 delta=s-s1;float len=length(delta);vec2 dir=len>.001?delta/len:vec2(1.,0.);
+  float size=max(.005*uFocalPx/c.w,.65*uScale);
+  vec2 off=dir*corner.y*(size+len*.6)+vec2(-dir.y,dir.x)*corner.x*size;
+  gl_Position=vec4((s+off)/(uRes*.5)*c.w,0.,c.w);
+  vQ=corner;vA=.45*sin(phase*3.141593)*uStrength;vDistance=length(wp-uCam);
+}`;
+const SPINDRIFT_FS = `#version 300 es
+precision highp float;in vec2 vQ;in float vA,vDistance;
+uniform sampler2D uTerrainDistance;uniform vec2 uRes;out vec4 o;
+void main(){
+  float q=dot(vQ,vQ);if(q>1.)discard;
+  vec4 surface=texture(uTerrainDistance,gl_FragCoord.xy/uRes);
+  float terrain=dot(surface.rgb/max(surface.a,.001),vec3(1.,1./255.,1./65025.))*20000.;
+  if(surface.a>.99&&vDistance>terrain+.03)discard;
+  float a=vA*(1.-q)*(1.-q);o=vec4(vec3(.86,.9,.94)*a,a);
+}`;
 
 // ---------------------------------------------------------------- setup
 function fail() { root.classList.add('no-webgl'); return null; }
@@ -709,7 +706,8 @@ function init() {
   const noiseProg = program(FULLSCREEN_VS, NOISE_FS);
   const scene = program(FULLSCREEN_VS, SCENE_FS);
   const snow = program(SNOW_VS, SNOW_FS);
-  if (!noiseProg || !scene || !snow) return fail();
+  const spindrift = program(SPINDRIFT_VS, SPINDRIFT_FS);
+  if (!noiseProg || !scene || !snow || !spindrift) return fail();
 
   // bake the noise volume, one slice per draw
   const N = 128, tex = gl.createTexture();
@@ -739,10 +737,15 @@ function init() {
   const rockImage = new Image();
   rockImage.onload = () => {
     if (done) return;
+    gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, rockTex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB8, gl.RGB, gl.UNSIGNED_BYTE, rockImage);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.generateMipmap(gl.TEXTURE_2D);
+    const aniso = gl.getExtension('EXT_texture_filter_anisotropic');
+    if (aniso?.TEXTURE_MAX_ANISOTROPY_EXT) {
+      gl.texParameterf(gl.TEXTURE_2D, aniso.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+    }
   };
   rockImage.src = 'site/assets/img/intro-kebnekaise-rock.webp';
 
@@ -759,10 +762,23 @@ function init() {
   gl.vertexAttribDivisor(0, 1);
   gl.bindVertexArray(null);
 
-  return { scene, snow, tex, rockTex, vao, COUNT };
+  const SPRAY_COUNT = coarse ? 160 : 360;
+  const powder = new Float32Array(SPRAY_COUNT * 8);
+  for (let i=0;i<SPRAY_COUNT;i++) {
+    const x=CLIMBER[0]+(Math.random()-.5)*36,z=CLIMBER[2]+4+Math.random()*44;
+    const ex=x+2.6+Math.random()*2,ez=z+.8+Math.random()*.8;
+    powder.set([x,groundAt(x,z)+.09,z,Math.random(),ex,groundAt(ex,ez)+.09,ez,Math.random()],i*8);
+  }
+  const sprayVao=gl.createVertexArray();gl.bindVertexArray(sprayVao);
+  gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,powder,gl.STATIC_DRAW);
+  for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,4,gl.FLOAT,false,32,i*16);gl.vertexAttribDivisor(i,1);}
+  gl.bindVertexArray(null);
+  const terrain = model.upload(gl, program, coarse, rockTex);
+  return { scene, snow, spindrift, sprayVao, SPRAY_COUNT, tex, rockTex, vao, COUNT, terrain };
 }
 
-const ctx = init();
+let ctx;
+try { ctx = init(); } catch (error) { console.error('Mountain renderer unavailable', error); fail(); }
 
 // ---------------------------------------------------------------- overlay
 const chapters = [...section.querySelectorAll('[data-chapter]')];
@@ -773,7 +789,7 @@ const readWind = section.querySelector('[data-read="wind"]');
 const altMark = section.querySelector('.intro-alt i');
 let lastChapter = -1, lastRead = '';
 
-function overlay(p, cam, vp, w, h) {
+function overlay(p, cam, vp, w, h, time = 0) {
   stage.style.setProperty('--p', p.toFixed(4));
   let ch = 0;
   chapters.forEach((el, i) => { if (p >= parseFloat(el.dataset.chapter)) ch = i; });
@@ -792,9 +808,10 @@ function overlay(p, cam, vp, w, h) {
     if (altMark) altMark.style.transform = `translateY(${(-(alt - 1700) / 700) * 100}%)`;
     lastRead = txt;
   }
+  stage.dataset.whiteout = storm(p).bank.toFixed(4);
   // FIG. 01 — pinned to the climber while they are still a speck
   if (fig) {
-    const on = p > 0.665 && p < 0.79;
+    const on = false; // the cloud transition uses no technical climber caption
     fig.classList.toggle('is-on', on);
     if (on && vp) {
       const c = project(vp, V.add(CLIMBER, [0, 1.0, 0]));
@@ -810,8 +827,8 @@ function project(m, p) {
   return w > 0 ? [x / w, y / w] : null;
 }
 
-function viewProj(pos, r, u, f, fov, aspect) {
-  const n = 0.1, fa = 20000, t = 1 / Math.tan(fov / 2);
+function viewProj(pos, r, u, f, fov, aspect, n = 0.1) {
+  const fa = 20000, t = 1 / Math.tan(fov / 2);
   const P = [t / aspect, 0, 0, 0, 0, t, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, (2 * fa * n) / (n - fa), 0];
   const Vw = [r[0], u[0], -f[0], 0, r[1], u[1], -f[1], 0, r[2], u[2], -f[2], 0, -V.dot(r, pos), -V.dot(u, pos), V.dot(f, pos), 1];
   const out = new Float32Array(16);
@@ -844,13 +861,14 @@ function updateAudio(p, time) {
   if (!audio) return;
   const gust = 0.5 + 0.5 * Math.sin(time * 0.37) * Math.sin(time * 0.13 + 1);
   const toWall = smooth(clamp(p / 0.85));
-  const silence = 1 - smooth(clamp((p - 0.9) / 0.08));
+  const weather = storm(p);
+  const silence = 1 - smooth(clamp((p - .915) / .065));
   const now = audio.ac.currentTime;
   const on = soundBtn.getAttribute('aria-pressed') === 'true' && p < 1.2;
-  audio.master.gain.setTargetAtTime(on ? (0.25 + 0.55 * toWall) * silence * (0.7 + 0.3 * gust) : 0, now, 0.25);
-  audio.low.frequency.setTargetAtTime(260 + 520 * gust * (0.4 + toWall), now, 0.3);
+  audio.master.gain.setTargetAtTime(on ? (0.25 + 0.40 * toWall + .5 * weather.gust) * silence * (0.7 + 0.3 * gust) : 0, now, 0.25);
+  audio.low.frequency.setTargetAtTime(260 + 520 * gust * (0.4 + toWall) + 650 * weather.gust, now, 0.3);
   audio.band.frequency.setTargetAtTime(700 + 900 * gust, now, 0.4);
-  audio.bandGain.gain.setTargetAtTime(0.18 * toWall * gust, now, 0.4);
+  audio.bandGain.gain.setTargetAtTime((0.18 * toWall + .35 * weather.gust) * gust, now, 0.4);
 }
 soundBtn?.addEventListener('click', () => {
   const on = soundBtn.getAttribute('aria-pressed') !== 'true';
@@ -861,9 +879,9 @@ soundBtn?.addEventListener('click', () => {
 });
 
 // ---------------------------------------------------------------- loop
-let scale = coarse ? 0.75 : 0.62;            // render resolution, in CSS pixels, adapted live
-const MAX_SCALE = Math.min(devicePixelRatio || 1, coarse ? 1.25 : 1.5);
-const MIN_SCALE = 0.3;
+const MAX_SCALE = Math.min(devicePixelRatio || 1, coarse ? 1.5 : 1.75);
+const MIN_SCALE = Math.min(MAX_SCALE, 1);     // never magnify a low-resolution mountain
+let scale = MAX_SCALE;
 let quality = coarse ? 1 : 2, cooldown = 60;
 let pShown = DEBUG_P ?? 0, target = 0, running = false, visible = true, raf = 0;
 let t0 = performance.now(), last = t0, frames = 0, acc = 0, prevCam = null;
@@ -874,8 +892,10 @@ function scrollProgress() {
 }
 
 function resize() {
-  const w = Math.max(1, Math.round(stage.clientWidth * scale));
-  const h = Math.max(1, Math.round(stage.clientHeight * scale));
+  const pixelCap = coarse ? 1200000 : 2800000;
+  const renderScale = Math.min(scale, Math.sqrt(pixelCap / (stage.clientWidth * stage.clientHeight)));
+  const w = Math.max(1, Math.round(stage.clientWidth * renderScale));
+  const h = Math.max(1, Math.round(stage.clientHeight * renderScale));
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
 }
 
@@ -897,7 +917,7 @@ function finish(toTop) {
 function frame(now) {
   running = false;
   if (!visible || !ctx || done) return;
-  const dt = Math.min((now - last) / 1000, 0.1); last = now;
+  const dt = Math.max(0, Math.min((now - last) / 1000, 0.1)); last = now;
   const time = (now - t0) / 1000;
   target = DEBUG_P ?? (reduced ? 0.4 : scrollProgress());
   pShown = reduced || DEBUG_P != null ? target : pShown + (target - pShown) * (1 - Math.exp(-dt * 2.6));
@@ -913,17 +933,24 @@ function frame(now) {
   const fov = (cam.fov * (W < H ? 1.3 : 1) * Math.PI) / 180;   // portrait: open up so the peak is not cropped
   const focal = 1 / Math.tan(fov / 2);
   const L = look(p);
+  const weather = storm(p);
   const tmax = Math.min(9000, 6.5 / (L.den * (0.55 + 1.6 * Math.exp(-(cam.pos[1] - 380) / 420)) + 1e-6));   // where the mist is total, stop
   const vel = prevCam && dt > 0 ? V.mul(V.sub(cam.pos, prevCam), 1 / dt) : [0, 0, 0];
   prevCam = cam.pos;
-  const white = smooth(clamp((p - 0.975) / 0.02));   // the fog is already white by then: this only settles the last bit
+  const white = weather.paper;   // the fog is already white by then: this only settles the last bit
 
+  const vp = viewProj(cam.pos, r, u, f, fov, W / H);
+  // A 3 m terrain near plane preserves distant depth precision. Snow retains
+  // its original 10 cm plane so flakes can still pass close to the camera.
+  ctx.terrain.render(viewProj(cam.pos, r, u, f, fov, W / H, 3), cam.pos, L, W, H);
   const { scene, snow } = ctx;
   gl.viewport(0, 0, W, H);
   gl.useProgram(scene.p);
   const U = scene.u;
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_3D, ctx.tex); gl.uniform1i(U.uNoise, 0);
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, ctx.rockTex); gl.uniform1i(U.uRock, 1);
+  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, ctx.terrain.colorTex); gl.uniform1i(U.uTerrainColor, 2);
+  gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, ctx.terrain.distanceTex); gl.uniform1i(U.uTerrainDistance, 3);
   gl.uniform2f(U.uRes, W, H);
   gl.uniform1f(U.uTime, reduced ? 0 : time);
   gl.uniform1f(U.uFocal, focal);
@@ -932,16 +959,16 @@ function frame(now) {
   gl.uniform3fv(U.uSunDir, L.sunDir);
   gl.uniform3fv(U.uSunCol, L.sun); gl.uniform3fv(U.uFogCol, L.fog);
   gl.uniform1f(U.uFogDen, L.den); gl.uniform1f(U.uCloud, L.cloud); gl.uniform1f(U.uWhite, white);
+  gl.uniform1f(U.uStorm, weather.bank); gl.uniform1f(U.uStormWind, weather.gust);
   gl.uniform1f(U.uTMax, tmax); gl.uniform1f(U.uExposure, L.exposure);
   gl.uniform1f(U.uVig, 1 - smooth(clamp((p - 0.87) / 0.1)));
   gl.uniform3f(U.uPaper, 0.957, 0.949, 0.933);
   gl.uniform1i(U.uSteps, coarse ? 110 : 180);
-  gl.uniform1i(U.uCloudSteps, coarse ? 7 : 12);
+  gl.uniform1i(U.uCloudSteps, coarse ? 8 : 14);
   gl.uniform1i(U.uQuality, quality);
   gl.disable(gl.BLEND);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-  const vp = viewProj(cam.pos, r, u, f, fov, W / H);
   if (white < 0.999) {
     gl.useProgram(snow.p);
     const S = snow.u;
@@ -950,9 +977,9 @@ function frame(now) {
     gl.uniform1f(S.uTime, reduced ? 0 : time);
     gl.uniform1f(S.uScale, scale);
     gl.uniform1f(S.uFocalPx, focal * H * 0.5);
-    gl.uniform1f(S.uDen, L.den);
+    gl.uniform1f(S.uDen, L.den); gl.uniform1f(S.uGust, weather.gust);
     gl.uniform2f(S.uRes, W, H);
-    const bright = (0.55 + 0.45 * clamp(p / 0.5)) * (1 - smooth(clamp((p - 0.9) / 0.07)));   // flakes vanish into the cloud
+    const bright = (0.55 + 0.45 * clamp(p / 0.5) + weather.gust*.35) * (1-white);   // flakes vanish into the cloud
     gl.uniform3f(S.uColor, 0.8 * bright, 0.84 * bright, 0.9 * bright);
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.bindVertexArray(ctx.vao);
@@ -960,7 +987,18 @@ function frame(now) {
     gl.bindVertexArray(null);
   }
 
-  overlay(reduced ? 0 : p, cam, vp, stage.clientWidth, stage.clientHeight);
+  const sprayStrength=smooth(clamp((p-.72)/.08))*(1-smooth(clamp((p-.89)/.065)))*(1-white);
+  if (sprayStrength>.001) {
+    gl.useProgram(ctx.spindrift.p);const S=ctx.spindrift.u;
+    gl.uniformMatrix4fv(S.uVP,false,vp);gl.uniform3fv(S.uCam,cam.pos);
+    gl.uniform2f(S.uRes,W,H);gl.uniform1f(S.uTime,time);
+    gl.uniform1f(S.uFocalPx,focal*H*.5);gl.uniform1f(S.uScale,scale);gl.uniform1f(S.uStrength,sprayStrength);
+    gl.activeTexture(gl.TEXTURE4);gl.bindTexture(gl.TEXTURE_2D,ctx.terrain.distanceTex);gl.uniform1i(S.uTerrainDistance,4);
+    gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.bindVertexArray(ctx.sprayVao);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,ctx.SPRAY_COUNT);gl.bindVertexArray(null);
+  }
+
+  overlay(reduced ? 0 : p, cam, vp, stage.clientWidth, stage.clientHeight, reduced ? 0 : time);
   stage.classList.toggle('is-light', p > 0.88 && !reduced);
   updateAudio(p, time);
 
@@ -977,6 +1015,17 @@ function frame(now) {
     frames = 0; acc = 0;
   }
   window.__intro = { p, scale, quality, W, H, ms: dt * 1000 };
+  // Expose read-only visual QA evidence through the DOM.
+  canvas.dataset.model = 'khumbu-approved';
+  canvas.dataset.transition = 'storm-whiteout';
+  canvas.dataset.gust = weather.gust.toFixed(4);
+  canvas.dataset.progress = p.toFixed(4);
+  canvas.dataset.camera = cam.pos.map(x => x.toFixed(2)).join(',');
+  canvas.dataset.triangles = ctx.terrain.count;
+  canvas.dataset.samples = ctx.terrain.samples;
+  canvas.dataset.resolution = W + 'x' + H;
+  canvas.dataset.frameMs = (dt * 1000).toFixed(1);
+  canvas.dataset.atmosphere = '595da573f2d1ac9b3bc489cc05bb9d5cb142c063';
   if (!reduced || DEBUG_P != null) request();
 }
 
